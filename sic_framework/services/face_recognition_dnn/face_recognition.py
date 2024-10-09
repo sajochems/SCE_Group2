@@ -6,8 +6,9 @@ import torch
 import torchvision
 
 from numpy import array
-from sic_framework.core.connector import SICConnector
+from pathlib import Path
 
+from sic_framework.core.connector import SICConnector
 from sic_framework.core.component_manager_python2 import SICComponentManager
 from sic_framework.core.message_python2 import CompressedImageMessage, SICMessage, BoundingBox, BoundingBoxesMessage, \
     CompressedImageRequest
@@ -35,14 +36,17 @@ class DNNFaceRecognitionComponent(SICService):
             self.device = "mps"
 
         # import is relative, so only works when this file is main
-        from model import resnet50
+        from sic_framework.services.face_recognition_dnn.model import resnet50
 
         self.model = resnet50(include_top=False, num_classes=8631)
-        self.model.load_state_dict(torch.load("resnet50_ft_weight.pt"))
+        script_dir = Path(__file__).parent.resolve()
+        model_path = script_dir / "resnet50_ft_weight.pt"
+        self.model.load_state_dict(torch.load(str(model_path)))
         self.model.to(self.device)
 
-        cascadePath = "haarcascade_frontalface_default.xml"
-        self.faceCascade = cv2.CascadeClassifier(cascadePath)
+
+        cascadePath = script_dir / "haarcascade_frontalface_default.xml"
+        self.faceCascade = cv2.CascadeClassifier(str(cascadePath))
 
         # Define min window size to be recognized as a face_img
         self.minW = 150

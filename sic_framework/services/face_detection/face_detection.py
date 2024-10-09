@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 
 from numpy import array
+from pathlib import Path
 
 from sic_framework.core import sic_logging
 from sic_framework.core.component_manager_python2 import SICComponentManager
@@ -10,7 +11,6 @@ from sic_framework.core.connector import SICConnector
 from sic_framework.core.message_python2 import CompressedImageMessage, SICMessage, BoundingBox, BoundingBoxesMessage, \
     SICConfMessage, CompressedImageRequest
 from sic_framework.core.service_python2 import SICService
-
 
 
 class FaceDetectionConf(SICConfMessage):
@@ -30,7 +30,8 @@ class FaceDetectionConf(SICConfMessage):
 class FaceDetectionComponent(SICComponent):
     def __init__(self, *args, **kwargs):
         super(FaceDetectionComponent, self).__init__(*args, **kwargs)
-        cascadePath = "haarcascade_frontalface_default.xml"
+        script_dir = Path(__file__).parent.resolve()
+        cascadePath = str(script_dir / "haarcascade_frontalface_default.xml")
         self.faceCascade = cv2.CascadeClassifier(cascadePath)
 
 
