@@ -138,5 +138,9 @@ class DNNFaceRecognition(SICConnector):
     component_class = DNNFaceRecognitionComponent
 
 
-if __name__ == '__main__':
+def main():
     SICComponentManager([DNNFaceRecognitionComponent])
+
+
+if __name__ == '__main__':
+    main()

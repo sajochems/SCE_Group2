@@ -76,5 +76,9 @@ class FaceDetection(SICConnector):
     component_class = FaceDetectionComponent
 
 
-if __name__ == '__main__':
+def main():
     SICComponentManager([FaceDetectionComponent])
+
+
+if __name__ == '__main__':
+    main()

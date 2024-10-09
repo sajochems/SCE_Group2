@@ -307,6 +307,8 @@ class DialogflowComponent(SICComponent):
 class Dialogflow(SICConnector):
     component_class = DialogflowComponent
 
+def main():
+    SICComponentManager([DialogflowComponent])
 
 if __name__ == '__main__':
-    SICComponentManager([DialogflowComponent])
+    main()
