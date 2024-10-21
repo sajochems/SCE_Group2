@@ -68,7 +68,7 @@ class Naoqi(SICDevice):
 
         assert robot_type in ["nao", "pepper"], "Robot type must be either 'nao' or 'pepper'"
 
-        self.auto_install()
+        # self.auto_install()
 
         redis_hostname, _ = sic_redis.get_redis_db_ip_password()
 
@@ -80,13 +80,45 @@ class Naoqi(SICDevice):
                 pkill -f "python2 {}.py"
                 """.format(robot_type)
 
-        start_cmd = """
-                export PYTHONPATH=/opt/aldebaran/lib/python2.7/site-packages; \
-                export LD_LIBRARY_PATH=/opt/aldebaran/lib/naoqi; \
-                cd ~/framework/sic_framework/devices; \
-                echo 'Robot: Starting SIC';\
-                python2 {robot_type}.py --redis_ip={redis_host}; 
-                """.format(robot_type=robot_type, redis_host=redis_hostname)
+        device_path = "/data/home/nao/.venv_sic/lib/python2.7/site-packages/sic_framework/devices"
+        robot_wrapper_file = device_path + "/" + robot_type
+
+        if robot_type == "nao":
+            start_cmd = """
+                    # export environment variables for naoqi
+                    export PYTHONPATH=/opt/aldebaran/lib/python2.7/site-packages;
+                    export LD_LIBRARY_PATH=/opt/aldebaran/lib/naoqi;
+
+                    if [ -f ~/.local/bin/virtualenv ]; then
+                        echo "virtualenv is installed"
+                    else
+                        echo "virtualenv is not installed. Installing now ..."
+                        pip install --user virtualenv
+                    fi;
+
+                    # create virtual environment if it doesn't exist
+                    if [ ! -d ~/.venv_sic ]; then
+                        /home/nao/.local/bin/virtualenv ~/.venv_sic;
+                        source ~/.venv_sic/bin/activate;
+
+                        # link OpenCV to the virtualenv
+                        ln -s /usr/lib/python2.7/site-packages/cv2.so ~/.venv_sic/lib/python2.7/site-packages/cv2.so;
+
+                        # install required packages
+                        pip install social-interaction-cloud --no-deps;
+                        pip install numpy Pillow redis six
+                    else
+                        # activate virtual environment if it exists
+                        source ~/.venv_sic/bin/activate;
+
+                        # upgrade the social-interaction-cloud package
+                        pip install --upgrade social-interaction-cloud --no-deps
+                    fi;
+
+                    echo 'Robot: Starting SIC';
+                    python2 {robot_wrapper_file}.py --redis_ip={redis_host};
+                    """.format(robot_wrapper_file=robot_wrapper_file, redis_host=redis_hostname)
+        # TODO: Add pepper start command
 
         self.ssh.exec_command(self.stop_cmd)
         time.sleep(.1)
