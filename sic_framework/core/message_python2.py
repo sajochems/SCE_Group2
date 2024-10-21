@@ -13,7 +13,7 @@ from . import utils
 if not six.PY3:
     import cPickle as pickle
     # Set path manually on pepper and nao
-    lib_turbo_jpeg_path = "/" + os.path.join(*__file__.split(os.sep)[:-3]) + "/lib/libtubojpeg/lib32/libturbojpeg.so.0"
+    lib_turbo_jpeg_path = "/" + os.path.join(*__file__.split(os.sep)[:-2]) + "/lib/libtubojpeg/lib32/libturbojpeg.so.0"
 else:
     lib_turbo_jpeg_path = None
     import pickle
