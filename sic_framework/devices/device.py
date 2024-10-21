@@ -133,7 +133,7 @@ class SICDevice(object):
         """
         # Find framework root folder
         root = str(pathlib.Path(__file__).parent.parent.parent.resolve())
-        assert os.path.basename(root) == "framework", "Could not find SIC 'framework' directory."
+        # assert os.path.basename(root) == "framework", "Could not find SIC 'framework' directory."
 
         # List of selected files and directories to be zipped and transferred
         selected_files = [
