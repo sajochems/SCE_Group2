@@ -106,7 +106,7 @@ class Naoqi(SICDevice):
 
                         # install required packages
                         pip install social-interaction-cloud --no-deps;
-                        pip install numpy Pillow redis six
+                        pip install Pillow PyTurboJPEG numpy redis six
                     else
                         # activate virtual environment if it exists
                         source ~/.venv_sic/bin/activate;
