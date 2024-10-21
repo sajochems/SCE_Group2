@@ -1,20 +1,17 @@
 from setuptools import setup, find_packages
 
 # Basic (bare minimum) requirements for local machine
-local_requirements = [
+requirements = [
+    'numpy',
+    'Pillow',
+    'PyTurboJPEG',
+    'redis',
+    'six',
     'opencv-python',
     'paramiko',
     'pyaudio',
     'pyspacemouse',
     'scp',
-]
-
-# Common requirements for both local machine and robot
-common_requirements = [
-    'numpy',
-    'Pillow',
-    'redis',
-    'six',
 ]
 
 # Dependencies specific to each component or server
@@ -35,12 +32,11 @@ extras_require = {
         'torch',
         'torchvision',
     ],
-    'local': local_requirements,
 }
 
 setup(
     name='social-interaction-cloud',
-    version='2.0.0',
+    version='2.0.12',
     author='Koen Hindriks',
     author_email='k.v.hindriks@vu.nl',
     packages=find_packages(),
@@ -48,12 +44,11 @@ setup(
         'sic_framework.services.face_detection': [
             'haarcascade_frontalface_default.xml',
         ],
-        'sic_framework.services.face_recognition_dnn': [
-            'haarcascade_frontalface_default.xml',
-            'resnet50_ft_weight.pt',
+        'lib.libturbojpeg.lib32': [
+            'libturbojpeg.so.0',
         ],
     },
-    install_requires=common_requirements,
+    install_requires=requirements,
     extras_require=extras_require,
     entry_points={
         'console_scripts': [
