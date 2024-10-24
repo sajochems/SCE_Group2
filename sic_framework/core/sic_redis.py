@@ -26,6 +26,7 @@ is somewhat discouraged as it may lead to harder to understand behaviour. The sa
 to request handlers with
 
 """
+
 import atexit
 import os
 import threading
@@ -33,10 +34,11 @@ import time
 
 import redis
 import six
+from six.moves import queue
+
+from sic_framework.core import utils
 from sic_framework.core.message_python2 import SICMessage, SICRequest
 from sic_framework.core.utils import is_sic_instance
-from sic_framework.core import utils
-from six.moves import queue
 
 
 class CallbackThread:
@@ -54,7 +56,7 @@ def cleanup_on_exit():
     for s in _sic_redis_instances:
         s.close()
 
-    time.sleep(.2)
+    time.sleep(0.2)
     if len([x.is_alive() for x in threading.enumerate()]) > 1:
         print("Left over threads:")
         for thread in threading.enumerate():
@@ -69,8 +71,8 @@ def get_redis_db_ip_password():
     """
     Get the redis db ip and password from environment variables. If not set, use default values.
     """
-    host = os.getenv('DB_IP', "127.0.0.1")
-    password = os.getenv('DB_PASS', "changemeplease")
+    host = os.getenv("DB_IP", "127.0.0.1")
+    password = os.getenv("DB_PASS", "changemeplease")
     return host, password
 
 
@@ -102,14 +104,24 @@ class SICRedis:
             self._redis = redis.Redis(host=host, ssl=False)
         except redis.exceptions.ConnectionError as e:
             # Must be a connection error; so now let's try to connect with TLS
-            ssl_ca_certs = os.path.join(os.path.dirname(__file__), 'cert.pem')
-            print('TLS required. Looking for certificate here:', ssl_ca_certs, "(Source error {})".format(e))
-            self._redis = redis.Redis(host=host, ssl=True, ssl_ca_certs=ssl_ca_certs, password=password)
+            ssl_ca_certs = os.path.join(os.path.dirname(__file__), "cert.pem")
+            print(
+                "TLS required. Looking for certificate here:",
+                ssl_ca_certs,
+                "(Source error {})".format(e),
+            )
+            self._redis = redis.Redis(
+                host=host, ssl=True, ssl_ca_certs=ssl_ca_certs, password=password
+            )
 
         try:
             self._redis.ping()
         except redis.exceptions.ConnectionError:
-            e = Exception("Could not connect to redis at {} \n\n Have you started redis? Use: `redis-server conf/redis/redis.conf`".format(host))
+            e = Exception(
+                "Could not connect to redis at {} \n\n Have you started redis? Use: `redis-server conf/redis/redis.conf`".format(
+                    host
+                )
+            )
             # six.raise_from(e, None) # unsupported on some peppers
             six.reraise(Exception, e, None)
 
@@ -169,7 +181,9 @@ class SICRedis:
         # sleep_time is how often the thread checks if the connection is still alive (and checks the stop condition),
         # if it is 0.0 it can never time out. It can receive messages much faster, so lets be nice to the CPU with 0.1.
         if six.PY3:
-            thread = pubsub.run_in_thread(sleep_time=0.1, daemon=False, exception_handler=exception_handler)
+            thread = pubsub.run_in_thread(
+                sleep_time=0.1, daemon=False, exception_handler=exception_handler
+            )
         else:
             # python2 does not support exception handler, but it's not as important to provide a clean exit on the robots
             thread = pubsub.run_in_thread(sleep_time=0.1, daemon=False)
@@ -200,7 +214,9 @@ class SICRedis:
         :param message: The message
         :return: The number of subscribers that received the message.
         """
-        assert isinstance(message, SICMessage), "Message must inherit from SICMessage (got {})".format(type(message))
+        assert isinstance(
+            message, SICMessage
+        ), "Message must inherit from SICMessage (got {})".format(type(message))
 
         return self._redis.publish(channel, message.serialize())
 
@@ -231,7 +247,9 @@ class SICRedis:
         """
 
         if request._request_id is None:
-            raise ValueError("Invalid request id for request {}".format(request.get_message_name()))
+            raise ValueError(
+                "Invalid request id for request {}".format(request.get_message_name())
+            )
 
         # Set up a callback to listen to the same channel, where we expect the reply.
         # Once we have the reply the queue passes the data back to this thread and the
@@ -243,7 +261,10 @@ class SICRedis:
         def await_reply(reply):
             # If not our own request but is a SICMessage with the right id, then it is the reply
             # we are waiting for
-            if not is_sic_instance(reply, SICRequest) and reply._request_id == request._request_id:
+            if (
+                not is_sic_instance(reply, SICRequest)
+                and reply._request_id == request._request_id
+            ):
                 q.put(reply)
                 done.set()
 
@@ -260,7 +281,11 @@ class SICRedis:
             done.wait(timeout)
 
             if not done.is_set():
-                raise TimeoutError("Waiting for reply to {} to request timed out".format(request.get_message_name()))
+                raise TimeoutError(
+                    "Waiting for reply to {} to request timed out".format(
+                        request.get_message_name()
+                    )
+                )
 
             # cleanup by unsubscribing and stopping the subscriber thread
             self.unregister_callback(callback_thread)
@@ -279,13 +304,18 @@ class SICRedis:
             if is_sic_instance(request, SICRequest):
                 reply = callback(request)
 
-                assert not is_sic_instance(reply, SICRequest) and is_sic_instance(reply, SICMessage), \
-                    "Request handler callback must return a SICMessage but not SICRequest, " \
+                assert not is_sic_instance(reply, SICRequest) and is_sic_instance(
+                    reply, SICMessage
+                ), (
+                    "Request handler callback must return a SICMessage but not SICRequest, "
                     "received: {}".format(type(reply))
+                )
 
                 self._reply(channel, request, reply)
 
-        return self.register_message_handler(channel, wrapped_callback, ignore_requests=False)
+        return self.register_message_handler(
+            channel, wrapped_callback, ignore_requests=False
+        )
 
     def time(self):
         return self._redis.time()
@@ -313,7 +343,11 @@ class SICRedis:
         :param pubsub_msg:
         :return:
         """
-        type_, channel, data = pubsub_msg["type"], pubsub_msg["channel"], pubsub_msg["data"]
+        type_, channel, data = (
+            pubsub_msg["type"],
+            pubsub_msg["channel"],
+            pubsub_msg["data"],
+        )
 
         if type_ == "message":
             message = SICMessage.deserialize(data)
@@ -322,18 +356,16 @@ class SICRedis:
         return None
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+
     class NamedMessage(SICMessage):
         def __init__(self, name):
             self.name = name
 
-
     class NamedRequest(NamedMessage, SICRequest):
         pass
 
-
     r = SICRedis()
-
 
     def do(channel, message):
         print("do", message.name)

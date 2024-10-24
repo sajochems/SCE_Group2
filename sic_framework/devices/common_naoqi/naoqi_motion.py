@@ -1,13 +1,14 @@
-import six
-from sic_framework import SICComponentManager, SICService, utils
 import numpy as np
+import six
+
+from sic_framework import SICComponentManager, SICService, utils
 from sic_framework.core.actuator_python2 import SICActuator
 from sic_framework.core.connector import SICConnector
-from sic_framework.core.message_python2 import SICRequest, SICMessage, SICConfMessage
+from sic_framework.core.message_python2 import SICConfMessage, SICMessage, SICRequest
 
 if utils.PYTHON_VERSION_IS_2:
-    from naoqi import ALProxy
     import qi
+    from naoqi import ALProxy
 
 
 class NaoqiMoveRequest(SICRequest):
@@ -32,6 +33,7 @@ class NaoqiMoveToRequest(NaoqiMoveRequest):
     y - Distance along the Y axis (side) in meters.
     theta - Rotation around the Z axis in radians [-3.1415 to 3.1415].
     """
+
     pass
 
 
@@ -42,6 +44,7 @@ class NaoqiMoveTowardRequest(NaoqiMoveRequest):
     y - normalized, unitless, velocity along Y-axis. +1 and -1 correspond to the maximum velocity in the left and right directions, respectively.
     theta - normalized, unitless, velocity around Z-axis. +1 and -1 correspond to the maximum velocity in the counterclockwise and clockwise directions, respectively.
     """
+
     pass
 
 
@@ -98,9 +101,18 @@ class NaoPostureRequest(SICRequest):
     ["Crouch", "LyingBack" "LyingBelly", "Sit", "SitRelax", "Stand", "StandInit", "StandZero"]
     """
 
-    def __init__(self, target_posture, speed=.4):
+    def __init__(self, target_posture, speed=0.4):
         super(NaoPostureRequest, self).__init__()
-        options = ["Crouch", "LyingBack", "LyingBelly", "Sit", "SitRelax", "Stand", "StandInit", "StandZero"]
+        options = [
+            "Crouch",
+            "LyingBack",
+            "LyingBelly",
+            "Sit",
+            "SitRelax",
+            "Stand",
+            "StandInit",
+            "StandZero",
+        ]
         assert target_posture in options, "Invalid pose {}".format(target_posture)
         self.target_posture = target_posture
         self.speed = speed
@@ -137,7 +149,7 @@ class PepperPostureRequest(SICRequest):
     ["Crouch", "LyingBack" "LyingBelly", "Sit", "SitRelax", "Stand", "StandInit", "StandZero"]
     """
 
-    def __init__(self, target_posture, speed=.4):
+    def __init__(self, target_posture, speed=0.4):
         super(PepperPostureRequest, self).__init__()
         options = ["Crouch", "Stand", "StandInit", "StandZero"]
         assert target_posture in options, "Invalid pose {}".format(target_posture)
@@ -150,15 +162,20 @@ class NaoqiMotionActuator(SICActuator):
         SICActuator.__init__(self, *args, **kwargs)
 
         self.session = qi.Session()
-        self.session.connect('tcp://127.0.0.1:9559')
+        self.session.connect("tcp://127.0.0.1:9559")
 
-        self.motion = self.session.service('ALMotion')
-        self.posture = self.session.service('ALRobotPosture')
+        self.motion = self.session.service("ALMotion")
+        self.posture = self.session.service("ALRobotPosture")
         self.animation = self.session.service("ALAnimationPlayer")
 
     @staticmethod
     def get_inputs():
-        return [NaoPostureRequest, NaoqiMoveRequest, NaoqiMoveToRequest, NaoqiMoveTowardRequest]
+        return [
+            NaoPostureRequest,
+            NaoqiMoveRequest,
+            NaoqiMoveToRequest,
+            NaoqiMoveTowardRequest,
+        ]
 
     @staticmethod
     def get_output():
@@ -202,5 +219,5 @@ class NaoqiMotion(SICConnector):
     component_class = NaoqiMotionActuator
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     SICComponentManager([NaoqiMotionActuator])

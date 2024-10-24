@@ -4,14 +4,24 @@ from sic_framework import utils
 from sic_framework.core.actuator_python2 import SICActuator
 from sic_framework.core.component_manager_python2 import SICComponentManager
 from sic_framework.core.connector import SICConnector
-from sic_framework.core.message_python2 import SICRequest, SICConfMessage, SICMessage
+from sic_framework.core.message_python2 import SICConfMessage, SICMessage, SICRequest
 
 if utils.PYTHON_VERSION_IS_2:
     import qi
 
+
 # @dataclass
 class NaoqiTextToSpeechRequest(SICRequest):
-    def __init__(self, text, language=None, animated=False, pitch=None, speed=None, pitch_shift=None, volume=None):
+    def __init__(
+        self,
+        text,
+        language=None,
+        animated=False,
+        pitch=None,
+        speed=None,
+        pitch_shift=None,
+        volume=None,
+    ):
         """
         Request the nao to say something
         :param text: object
@@ -32,7 +42,14 @@ class NaoqiTextToSpeechRequest(SICRequest):
 
 # @dataclass
 class NaoqiTextToSpeechConf(SICConfMessage):
-    def __init__(self, language="English", volume=None, speed=None, pitch=None, pitch_shift=None, ):
+    def __init__(
+        self,
+        language="English",
+        volume=None,
+        speed=None,
+        pitch=None,
+        pitch_shift=None,
+    ):
         """
         Set the parameters for the text to speech engine. If None, the default NAOqi values are used.
         See http://doc.aldebaran.com/2-4/naoqi/audio/altexttospeech-api.html#ALTextToSpeechProxy::setParameter__ssCR.floatCR
@@ -61,10 +78,10 @@ class NaoqiTextToSpeechActuator(SICActuator):
         super(NaoqiTextToSpeechActuator, self).__init__(*args, **kwargs)
 
         self.session = qi.Session()
-        self.session.connect('tcp://127.0.0.1:9559')
+        self.session.connect("tcp://127.0.0.1:9559")
 
-        self.tts = self.session.service('ALTextToSpeech')
-        self.atts = self.session.service('ALAnimatedSpeech')
+        self.tts = self.session.service("ALTextToSpeech")
+        self.atts = self.session.service("ALAnimatedSpeech")
 
         self.set_params(self.params)
 
@@ -112,5 +129,5 @@ class NaoqiTextToSpeech(SICConnector):
     component_class = NaoqiTextToSpeechActuator
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     SICComponentManager([NaoqiTextToSpeechActuator])

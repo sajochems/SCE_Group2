@@ -1,5 +1,5 @@
+from sic_framework import SICComponentManager, SICConfMessage, SICMessage, utils
 from sic_framework.core.component_python2 import SICComponent
-from sic_framework import utils, SICComponentManager, SICMessage, SICConfMessage
 from sic_framework.core.connector import SICConnector
 
 if utils.PYTHON_VERSION_IS_2:
@@ -25,11 +25,12 @@ class NaoqiButtonSensor(SICComponent):
     """
     NaoqiButtonSensor is a sensor that reads the robot's physical button and touch values from the ALMemory module.
     """
+
     def __init__(self, *args, **kwargs):
         super(NaoqiButtonSensor, self).__init__(*args, **kwargs)
 
         self.session = qi.Session()
-        self.session.connect('tcp://127.0.0.1:9559')
+        self.session.connect("tcp://127.0.0.1:9559")
 
         # Connect to AL proxies
         self.memory_service = self.session.service("ALMemory")
@@ -68,5 +69,5 @@ class NaoqiButton(SICConnector):
     component_class = NaoqiButtonSensor
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     SICComponentManager([NaoqiButtonSensor])

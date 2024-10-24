@@ -1,7 +1,11 @@
 from sic_framework import SICComponentManager, SICConfMessage
 from sic_framework.core.component_python2 import SICComponent
 from sic_framework.core.connector import SICConnector
-from sic_framework.core.message_python2 import BoundingBox, BoundingBoxesMessage, CompressedImageMessage
+from sic_framework.core.message_python2 import (
+    BoundingBox,
+    BoundingBoxesMessage,
+    CompressedImageMessage,
+)
 
 
 class DummyConf(SICConfMessage):
@@ -66,6 +70,6 @@ class Example(SICConnector):
     component_class = ExampleComponent
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Request the service to start using the SICServiceManager on this device
     SICComponentManager([ExampleComponent])

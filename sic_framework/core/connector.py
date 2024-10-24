@@ -7,9 +7,10 @@ import six
 from sic_framework.core.component_python2 import ConnectRequest
 from sic_framework.core.sensor_python2 import SICSensor
 from sic_framework.core.utils import is_sic_instance
+
 from . import utils
-from .component_manager_python2 import SICStartComponentRequest, SICNotStartedMessage
-from .message_python2 import SICMessage, SICRequest, SICStopRequest, SICPingRequest
+from .component_manager_python2 import SICNotStartedMessage, SICStartComponentRequest
+from .message_python2 import SICMessage, SICPingRequest, SICRequest, SICStopRequest
 from .sic_logging import SIC_LOG_SUBSCRIBER
 from .sic_redis import SICRedis
 
@@ -28,7 +29,7 @@ class SICConnector(object):
         """
         A proxy that enables communication with a component that has been started. We can send messages to, and receive
         from the component that is running on potentially another computer.
-        
+
         :param ip: the ip adress of the device the service is running on
         :param log_level: Controls the verbosity of the connected component logging.
         :param conf: Optional SICConfMessage to set component parameters.
@@ -60,7 +61,9 @@ class SICConnector(object):
             self._start_component()
 
         # subscribe the component to a channel that the user is able to send a message on if needed
-        self.input_channel = "{}:input:{}".format(self.component_class.get_component_name(), self._ip)
+        self.input_channel = "{}:input:{}".format(
+            self.component_class.get_component_name(), self._ip
+        )
         self.request(ConnectRequest(self.input_channel), timeout=self._PING_TIMEOUT)
 
     def _ping(self):
@@ -92,32 +95,50 @@ class SICConnector(object):
         :param device_id: The id of the device we wat to start a component on
 
         """
-        print("Component not already alive, requesting", self.component_class.get_component_name(), "from manager ",
-              self._ip)
+        print(
+            "Component not already alive, requesting",
+            self.component_class.get_component_name(),
+            "from manager ",
+            self._ip,
+        )
 
         if issubclass(self.component_class, SICSensor) and self._conf:
-            print("Warning: setting configuration for SICSensors only works the first time connecting (sensor "
-                  "component instances are reused for now)")
+            print(
+                "Warning: setting configuration for SICSensors only works the first time connecting (sensor "
+                "component instances are reused for now)"
+            )
 
         component_request = SICStartComponentRequest(
             component_name=self.component_class.get_component_name(),
             log_level=self._log_level,
-            conf=self._conf)
+            conf=self._conf,
+        )
 
         # factory returns a SICStartedComponentInformation
 
         try:
 
-            component_info = self._redis.request(self._ip, component_request,
-                                                 timeout=self.component_class.COMPONENT_STARTUP_TIMEOUT)
+            component_info = self._redis.request(
+                self._ip,
+                component_request,
+                timeout=self.component_class.COMPONENT_STARTUP_TIMEOUT,
+            )
             if is_sic_instance(component_info, SICNotStartedMessage):
                 raise ComponentNotStartedError(
-                    "\n\nComponent did not start, error should be logged above. ({})".format(component_info.message))
+                    "\n\nComponent did not start, error should be logged above. ({})".format(
+                        component_info.message
+                    )
+                )
 
         except TimeoutError as e:
             six.raise_from(
-                TimeoutError("Could not connect to {}. Is SIC running on the device (ip:{})?".format(self.component_class.get_component_name(), self._ip)),
-                None)
+                TimeoutError(
+                    "Could not connect to {}. Is SIC running on the device (ip:{})?".format(
+                        self.component_class.get_component_name(), self._ip
+                    )
+                ),
+                None,
+            )
 
     def register_callback(self, callback):
         """
@@ -148,8 +169,11 @@ class SICConnector(object):
         :return:
         """
 
-        assert isinstance(component, SICConnector), "Component connector is not a SICConnector " \
-                                                    "(type:{})".format(type(component))
+        assert isinstance(
+            component, SICConnector
+        ), "Component connector is not a SICConnector " "(type:{})".format(
+            type(component)
+        )
 
         request = ConnectRequest(component.output_channel)
         self._redis.request(self._request_reply_channel, request)
@@ -168,15 +192,20 @@ class SICConnector(object):
         """
         if isinstance(request, type):
             print(
-                "You probably forgot to initiate the class. For example, use NaoRestRequest() instead of NaoRestRequest.")
+                "You probably forgot to initiate the class. For example, use NaoRestRequest() instead of NaoRestRequest."
+            )
 
-        assert utils.is_sic_instance(request, SICRequest), "Cannot send requests that do not inherit from " \
-                                                           "SICRequest (type: {req})".format(req=type(request))
+        assert utils.is_sic_instance(request, SICRequest), (
+            "Cannot send requests that do not inherit from "
+            "SICRequest (type: {req})".format(req=type(request))
+        )
 
         # Update the timestamp, as it is not yet set (normally be set by the device of origin, e.g a camera)
         request._timestamp = self._get_timestamp()
 
-        return self._redis.request(self._request_reply_channel, request, timeout=timeout, block=block)
+        return self._redis.request(
+            self._request_reply_channel, request, timeout=timeout, block=block
+        )
 
     def stop(self):
         """
@@ -188,7 +217,6 @@ class SICConnector(object):
             self._redis.close()
 
         SIC_LOG_SUBSCRIBER.stop()
-
 
     # TODO: maybe put this in constructor to do a graceful exit on crash?
     # register cleanup to disconnect redis if an exception occurs anywhere during exection

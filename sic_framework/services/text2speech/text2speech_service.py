@@ -1,16 +1,29 @@
-from sic_framework.core.actuator_python2 import SICActuator
-from sic_framework.core.connector import SICConnector
-from sic_framework.core.message_python2 import SICConfMessage, SICMessage, SICRequest, SICStopRequest, AudioMessage
-from sic_framework import SICComponentManager
-from google.cloud import texttospeech as tts
-from google.oauth2.service_account import Credentials
-
 import io
 import wave
 
+from google.cloud import texttospeech as tts
+from google.oauth2.service_account import Credentials
+
+from sic_framework import SICComponentManager
+from sic_framework.core.actuator_python2 import SICActuator
+from sic_framework.core.connector import SICConnector
+from sic_framework.core.message_python2 import (
+    AudioMessage,
+    SICConfMessage,
+    SICMessage,
+    SICRequest,
+    SICStopRequest,
+)
+
 
 class Text2SpeechConf(SICConfMessage):
-    def __init__(self, keyfile: str, language_code: str = 'en-US', ssml_gender: int = tts.SsmlVoiceGender.NEUTRAL, voice_name: str = ''):
+    def __init__(
+        self,
+        keyfile: str,
+        language_code: str = "en-US",
+        ssml_gender: int = tts.SsmlVoiceGender.NEUTRAL,
+        voice_name: str = "",
+    ):
         """
         Configuration message for Text2Speech SICAction.
         Options for language_code, voice_name, and ssml_gender can be found at https://cloud.google.com/text-to-speech/docs/voices
@@ -32,7 +45,10 @@ class GetSpeechRequest(SICRequest):
     SICRequest to send to Text2Speech SICAction.
     The request embeds the text to synthesize and optionally Google voice parameters.
     """
-    def __init__(self, text: str, language_code=None, voice_name=None, ssml_gender=None):
+
+    def __init__(
+        self, text: str, language_code=None, voice_name=None, ssml_gender=None
+    ):
         """
         :param text: the text to synthesize
         :param language_code: see Text2SpeechConf
@@ -52,6 +68,7 @@ class SpeechResult(AudioMessage):
     The SICMessage that will be returned by the Text2Speech SICAction.
     This message contains the synthesized audio using AudioMessage's format.
     """
+
     def __init__(self, wav_audio):
         """
         :param wav_audio: synthesized audio
@@ -63,9 +80,9 @@ class SpeechResult(AudioMessage):
         sample_rate = audio.getframerate()
         audio_bytes = audio.readframes(audio.getnframes())
 
-        super(SpeechResult, self).__init__(waveform=audio_bytes, sample_rate=sample_rate)
-
-
+        super(SpeechResult, self).__init__(
+            waveform=audio_bytes, sample_rate=sample_rate
+        )
 
 
 class Text2SpeechService(SICActuator):
@@ -74,6 +91,7 @@ class Text2SpeechService(SICActuator):
     This SICAction responds to GetSpeechRequest requests and returns a SpeechResult.
     The parameters can be set using Text2SpeechConf.
     """
+
     def __init__(self, *args, **kwargs):
         super(Text2SpeechService, self).__init__(*args, **kwargs)
 
@@ -107,14 +125,26 @@ class Text2SpeechService(SICActuator):
         synthesis_input = tts.SynthesisInput(text=request.text)
 
         # Build the voice request based on request parameters, fall back on service config parameters
-        lang_code = request.language_code if request.language_code else self.params.language_code
-        voice_name = request.voice_name if request.voice_name else self.params.voice_name
-        ssml_gender = request.ssml_gender if request.ssml_gender else self.params.ssml_gender
+        lang_code = (
+            request.language_code
+            if request.language_code
+            else self.params.language_code
+        )
+        voice_name = (
+            request.voice_name if request.voice_name else self.params.voice_name
+        )
+        ssml_gender = (
+            request.ssml_gender if request.ssml_gender else self.params.ssml_gender
+        )
 
-        voice = tts.VoiceSelectionParams(language_code=lang_code, name=voice_name, ssml_gender=ssml_gender)
+        voice = tts.VoiceSelectionParams(
+            language_code=lang_code, name=voice_name, ssml_gender=ssml_gender
+        )
 
         # Perform the text-to-speech request
-        response = self.client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=self.audio_config)
+        response = self.client.synthesize_speech(
+            input=synthesis_input, voice=voice, audio_config=self.audio_config
+        )
 
         return SpeechResult(wav_audio=response.audio_content)
 
@@ -123,5 +153,5 @@ class Text2Speech(SICConnector):
     component_class = Text2SpeechService
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     SICComponentManager([Text2SpeechService])

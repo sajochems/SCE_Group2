@@ -11,10 +11,10 @@ from sic_framework.core import utils
 from sic_framework.core.connector import SICConnector
 
 if six.PY3:
-    import paramiko
     import pathlib
-    from scp import SCPClient
 
+    import paramiko
+    from scp import SCPClient
 
 
 class _SICLibrary(object):
@@ -35,7 +35,9 @@ class _SICLibrary(object):
 
     def install(self, ssh):
         print("Installing {} on remote device ".format(self.name), end="")
-        stdin, stdout, stderr = ssh.exec_command("cd {} && {}".format(self.lib_path, self.lib_install_cmd))
+        stdin, stdout, stderr = ssh.exec_command(
+            "cd {} && {}".format(self.lib_path, self.lib_install_cmd)
+        )
 
         # print a dot every line to indicate progress
         while True:
@@ -51,23 +53,32 @@ class _SICLibrary(object):
             print("".join(err))
             print("Command:", "cd {} && {}".format(self.lib_path, self.lib_install_cmd))
             raise RuntimeError(
-                "Error while installing library on remote device. Please consult manual installation instructions.")
+                "Error while installing library on remote device. Please consult manual installation instructions."
+            )
         else:
             print(" done.")
 
 
 _LIBS_TO_INSTALL = [
-    _SICLibrary("redis", "~/framework/lib/redis", "pip install --user redis-3.5.3-py2.py3-none-any.whl"),
-    _SICLibrary("PyTurboJPEG", "~/framework/lib/libtubojpeg/PyTurboJPEG-master", "pip install --user ."),
-    _SICLibrary("sic-framework", "~/framework", "pip install --user -e .")
+    _SICLibrary(
+        "redis",
+        "~/framework/lib/redis",
+        "pip install --user redis-3.5.3-py2.py3-none-any.whl",
+    ),
+    _SICLibrary(
+        "PyTurboJPEG",
+        "~/framework/lib/libtubojpeg/PyTurboJPEG-master",
+        "pip install --user .",
+    ),
+    _SICLibrary("sic-framework", "~/framework", "pip install --user -e ."),
 ]
+
 
 def exclude_pyc(tarinfo):
     if tarinfo.name.endswith(".pyc"):
         return None
     else:
         return tarinfo
-
 
 
 class SICDevice(object):
@@ -94,22 +105,37 @@ class SICDevice(object):
 
             if not utils.ping_server(self.ip, port=22, timeout=3):
                 raise RuntimeError(
-                    "Could not connect to device on ip {}. Please check if it is reachable.".format(self.ip))
+                    "Could not connect to device on ip {}. Please check if it is reachable.".format(
+                        self.ip
+                    )
+                )
 
             self.ssh = paramiko.SSHClient()
             self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             # allow_agent=False, look_for_keys=False to disable asking for keyring (just use the password)
             for p in passwords:
                 try:
-                    self.ssh.connect(self.ip, port=22, username=username, password=p, timeout=3, allow_agent=False,
-                                     look_for_keys=False)
+                    self.ssh.connect(
+                        self.ip,
+                        port=22,
+                        username=username,
+                        password=p,
+                        timeout=3,
+                        allow_agent=False,
+                        look_for_keys=False,
+                    )
                     break
-                except (paramiko.ssh_exception.AuthenticationException, paramiko.ssh_exception.BadAuthenticationType):
+                except (
+                    paramiko.ssh_exception.AuthenticationException,
+                    paramiko.ssh_exception.BadAuthenticationType,
+                ):
                     pass
             else:
                 raise paramiko.ssh_exception.AuthenticationException(
                     "Could not authenticate to device, please check ip adress and/or credentials. (Username: {} Passwords: {})".format(
-                        username, passwords))
+                        username, passwords
+                    )
+                )
 
     def get_last_modified(self, root, paths):
         last_modified = 0
@@ -117,7 +143,9 @@ class SICDevice(object):
         for file_or_folder in paths:
             file_or_folder = root + file_or_folder
             if os.path.isdir(file_or_folder):
-                sub_last_modified = max(os.path.getmtime(root) for root, _, _ in os.walk(file_or_folder))
+                sub_last_modified = max(
+                    os.path.getmtime(root) for root, _, _ in os.walk(file_or_folder)
+                )
                 last_modified = max(sub_last_modified, last_modified)
             elif os.path.isfile(file_or_folder):
                 last_modified = max(os.path.getmtime(file_or_folder), last_modified)
@@ -145,14 +173,17 @@ class SICDevice(object):
             "/sic_framework/__init__.py",
         ]
 
-
         last_modified = self.get_last_modified(root, selected_files)
 
         # Create a signature for the framework
-        framework_signature = "~/framework/sic_version_signature_{}_{}".format(utils.get_ip_adress(), last_modified)
+        framework_signature = "~/framework/sic_version_signature_{}_{}".format(
+            utils.get_ip_adress(), last_modified
+        )
 
         # Check if the framework signature file exists
-        stdin, stdout, stderr = self.ssh.exec_command('ls {}'.format(framework_signature))
+        stdin, stdout, stderr = self.ssh.exec_command(
+            "ls {}".format(framework_signature)
+        )
         file_exists = len(stdout.readlines()) > 0
 
         if file_exists:
@@ -163,15 +194,21 @@ class SICDevice(object):
         _, stdout_pip_freeze, _ = self.ssh.exec_command("pip freeze")
 
         def progress(filename, size, sent):
-            print("\r {} progress: {}".format(filename.decode("utf-8"), round(float(sent) / float(size) * 100, 2)),
-                  end="")
+            print(
+                "\r {} progress: {}".format(
+                    filename.decode("utf-8"), round(float(sent) / float(size) * 100, 2)
+                ),
+                end="",
+            )
 
         print("Copying framework to the remote device.")
         with SCPClient(self.ssh.get_transport(), progress=progress) as scp:
 
             # Copy the framework to the remote computer
-            with tempfile.NamedTemporaryFile(suffix='_sic_files.tar.gz', delete=False) as f:
-                with tarfile.open(fileobj=f, mode='w:gz') as tar:
+            with tempfile.NamedTemporaryFile(
+                suffix="_sic_files.tar.gz", delete=False
+            ) as f:
+                with tarfile.open(fileobj=f, mode="w:gz") as tar:
                     for file in selected_files:
                         tar.add(root + file, arcname=file, filter=exclude_pyc)
 
@@ -184,13 +221,16 @@ class SICDevice(object):
 
             # Unzip the file on the remote server
             # use --touch to prevent files from having timestamps of 1970 which intefere with python caching
-            stdin, stdout, stderr = self.ssh.exec_command("cd framework && tar --touch -xvf sic_files.tar.gz")
+            stdin, stdout, stderr = self.ssh.exec_command(
+                "cd framework && tar --touch -xvf sic_files.tar.gz"
+            )
 
             err = stderr.readlines()
             if len(err) > 0:
                 print("".join(err))
                 raise RuntimeError(
-                    "\n\nError while extracting library on remote device. Please consult manual installation instructions.")
+                    "\n\nError while extracting library on remote device. Please consult manual installation instructions."
+                )
 
             # Remove the zipped file
             self.ssh.exec_command("rm ~/framework/sic_files.tar.gz")
@@ -205,8 +245,8 @@ class SICDevice(object):
 
         # Remove signatures from the remote computer
         # add own signature to the remote computer
-        self.ssh.exec_command('rm ~/framework/sic_version_signature_*')
-        self.ssh.exec_command('touch {}'.format(framework_signature))
+        self.ssh.exec_command("rm ~/framework/sic_version_signature_*")
+        self.ssh.exec_command("touch {}".format(framework_signature))
 
     def _get_connector(self, component_connector):
         """
@@ -216,25 +256,40 @@ class SICDevice(object):
         :return: SICConnector
         """
 
-        assert issubclass(component_connector, SICConnector), "Component connector must be a SICConnector"
+        assert issubclass(
+            component_connector, SICConnector
+        ), "Component connector must be a SICConnector"
 
         if component_connector not in self.connectors:
             conf = self.configs.get(component_connector, None)
 
             try:
-                self.connectors[component_connector] = component_connector(self.ip, conf=conf)
+                self.connectors[component_connector] = component_connector(
+                    self.ip, conf=conf
+                )
             except TimeoutError as e:
-                raise TimeoutError("Could not connect to {} on device {}.".format(
-                    component_connector.component_class.get_component_name(), self.ip))
+                raise TimeoutError(
+                    "Could not connect to {} on device {}.".format(
+                        component_connector.component_class.get_component_name(),
+                        self.ip,
+                    )
+                )
         return self.connectors[component_connector]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     # allow_agent=False, look_for_keys=False to disable asking for keyring (just use the password)
-    ssh.connect("192.168.0.151", port=22, username="nao", password="nao", timeout=5, allow_agent=False,
-                look_for_keys=False)
+    ssh.connect(
+        "192.168.0.151",
+        port=22,
+        username="nao",
+        password="nao",
+        timeout=5,
+        allow_agent=False,
+        look_for_keys=False,
+    )
 
     # Unzip the file on the remote server
     stdin, stdout, stderr = ssh.exec_command("apt update")

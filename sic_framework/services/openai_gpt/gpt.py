@@ -1,13 +1,15 @@
+import openai
+
 from sic_framework import SICComponentManager, SICConfMessage
 from sic_framework.core.component_python2 import SICComponent
 from sic_framework.core.connector import SICConnector
 from sic_framework.core.message_python2 import SICMessage, SICRequest
-import openai
 
 """
 Please use this version of openai, and not the recently updated version as this file has not been updated yet.
 pip install openai==0.28.1
 """
+
 
 class GPTConf(SICConfMessage):
     """
@@ -32,6 +34,7 @@ class GPTResponse(SICMessage):
     :param response: the actual response from the model
     :param num_tokens: TODO
     """
+
     def __init__(self, response, num_tokens):
         super().__init__()
         self.response = response
@@ -45,7 +48,16 @@ class GPTRequest(SICRequest):
 
     For all other optional parameters, see GPTConf
     """
-    def __init__(self, text, system_messages=None, context_messages=None, model=None, temp=None, max_tokens=None):
+
+    def __init__(
+        self,
+        text,
+        system_messages=None,
+        context_messages=None,
+        model=None,
+        temp=None,
+        max_tokens=None,
+    ):
         super().__init__()
         self.text = text
         self.system_messages = system_messages
@@ -53,7 +65,6 @@ class GPTRequest(SICRequest):
         self.model = model
         self.temperature = temp
         self.max_tokens = max_tokens
-
 
 
 class GPTComponent(SICComponent):
@@ -79,7 +90,15 @@ class GPTComponent(SICComponent):
         return GPTConf()
 
     # @backoff.on_exception(backoff.expo, openai.error.RateLimitError)
-    def get_openai_response(self, user_messages, context_messages=None, system_messages=None, model=None, temp=None, max_tokens=None):
+    def get_openai_response(
+        self,
+        user_messages,
+        context_messages=None,
+        system_messages=None,
+        model=None,
+        temp=None,
+        max_tokens=None,
+    ):
         """
         TODO
         """
@@ -101,7 +120,7 @@ class GPTComponent(SICComponent):
         print(response)
 
         content = response.choices[0].message["content"]
-        num_tokens = response['usage']['total_tokens']
+        num_tokens = response["usage"]["total_tokens"]
 
         return GPTResponse(content, num_tokens)
 
@@ -113,12 +132,14 @@ class GPTComponent(SICComponent):
 
     def on_request(self, request):
         print("GOT REQUEST", request)
-        output = self.get_openai_response(request.text,
-                                          system_messages=request.system_messages,
-                                          context_messages=request.context_messages,
-                                          model=request.model,
-                                          temp=request.temperature,
-                                          max_tokens=request.max_tokens)
+        output = self.get_openai_response(
+            request.text,
+            system_messages=request.system_messages,
+            context_messages=request.context_messages,
+            model=request.model,
+            temp=request.temperature,
+            max_tokens=request.max_tokens,
+        )
         return output
 
 
@@ -126,6 +147,6 @@ class GPT(SICConnector):
     component_class = GPTComponent
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Request the service to start using the SICServiceManager on this device
     SICComponentManager([GPTComponent])

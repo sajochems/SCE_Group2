@@ -51,5 +51,5 @@ class Example(SICConnector):
     component_class = ExampleService
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     SICComponentManager([ExampleService])

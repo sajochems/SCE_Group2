@@ -1,9 +1,15 @@
-from sic_framework.devices.common_naoqi.naoqi_camera import StereoImageMessage
-from sic_framework import UncompressedImageMessage
-from sic_framework import SICComponentManager, SICService, SICMessage, SICConfMessage, utils
+import numpy as np
 from cv2 import StereoSGBM_create, ximgproc
 
-import numpy as np
+from sic_framework import (
+    SICComponentManager,
+    SICConfMessage,
+    SICMessage,
+    SICService,
+    UncompressedImageMessage,
+    utils,
+)
+from sic_framework.devices.common_naoqi.naoqi_camera import StereoImageMessage
 
 
 class DepthEstimationService(SICService):
@@ -33,7 +39,7 @@ class DepthEstimationService(SICService):
             disp12MaxDiff=DISP12_MAX_DIFF,
             P1=8 * BLOCK_SIZE * BLOCK_SIZE,
             P2=32 * BLOCK_SIZE * BLOCK_SIZE,
-            mode=STEREO_MODE
+            mode=STEREO_MODE,
         )
         self.right_matcher = ximgproc.createRightMatcher(self.left_matcher)
         self.wls_filter = ximgproc.createDisparityWLSFilter(self.left_matcher)
@@ -62,9 +68,13 @@ class DepthEstimationService(SICService):
         print(round(np.sum(left_disp < -16) / left_disp.size * 100, 2), left_disp.max())
 
         right_disp = self.right_matcher.compute(right, left)
-        print(round(np.sum(right_disp < -16) / right_disp.size * 100, 2) , right_disp.max())
+        print(
+            round(np.sum(right_disp < -16) / right_disp.size * 100, 2), right_disp.max()
+        )
 
-        filtered_disp = self.wls_filter.filter(left_disp, left, disparity_map_right=right_disp)
+        filtered_disp = self.wls_filter.filter(
+            left_disp, left, disparity_map_right=right_disp
+        )
         print(np.sum((filtered_disp.astype(float) / 16.0) == -1))
 
         disparity_img = filtered_disp.astype(np.float) / 16.0
@@ -84,5 +94,5 @@ class DepthEstimationService(SICService):
         # return ImageMessage(depth_img)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     SICComponentManager([DepthEstimationService], "local")

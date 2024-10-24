@@ -25,8 +25,10 @@ class SICLogMessage(SICMessage):
         self.msg = msg
         super(SICLogMessage, self).__init__()
 
+
 class SICRemoteError(Exception):
     """An exception indicating the error happend on a remote device"""
+
 
 class SICLogSubscriber(object):
 
@@ -45,8 +47,9 @@ class SICLogSubscriber(object):
         if not self.running:
             self.running = True
             self.redis = SICRedis(parent_name="SICLogSubscriber")
-            self.redis.register_message_handler(get_log_channel(), self._handle_log_message)
-
+            self.redis.register_message_handler(
+                get_log_channel(), self._handle_log_message
+            )
 
     def _handle_log_message(self, message):
         """
@@ -63,9 +66,11 @@ class SICLogSubscriber(object):
             self.running = False
             self.redis.close()
 
+
 # pseudo singleton object. Does nothing when this file is executed during the import, but can subscribe to the log
 # channel for the user with subscribe_to_log_channel_once
 SIC_LOG_SUBSCRIBER = SICLogSubscriber()
+
 
 class SICLogStream(io.TextIOBase):
     """
@@ -121,7 +126,9 @@ def get_sic_logger(redis, name, log_level):
     debug_stream = SICLogStream(redis, get_log_channel())
     handler_redis = logging.StreamHandler(debug_stream)
 
-    log_format = SICLogFormatter('[%(name)s {ip}]: %(levelname)s: %(message)s'.format(ip=utils.get_ip_adress()))
+    log_format = SICLogFormatter(
+        "[%(name)s {ip}]: %(levelname)s: %(message)s".format(ip=utils.get_ip_adress())
+    )
     handler_redis.setFormatter(log_format)
 
     handler_terminal = logging.StreamHandler()
@@ -140,15 +147,19 @@ CRITICAL = 50
 ERROR = 40
 WARNING = 30
 INFO = 20  # service dependent sparse information
-DEBUG = 10   # service dependent verbose information
+DEBUG = 10  # service dependent verbose information
 SIC_DEBUG_FRAMEWORK = 6  # sparse messages, e.g. when executing, etc.
-SIC_DEBUG_FRAMEWORK_VERBOSE = 4  # detailed messages, e.g. for each input output operation
+SIC_DEBUG_FRAMEWORK_VERBOSE = (
+    4  # detailed messages, e.g. for each input output operation
+)
 NOTSET = 0
+
 
 def debug_framework(self, message, *args, **kws):
     if self.isEnabledFor(SIC_DEBUG_FRAMEWORK):
         # Yes, logger takes its '*args' as 'args'.
         self._log(SIC_DEBUG_FRAMEWORK, message, args, **kws)
+
 
 def debug_framework_verbose(self, message, *args, **kws):
     if self.isEnabledFor(SIC_DEBUG_FRAMEWORK_VERBOSE):
@@ -161,5 +172,3 @@ logging.addLevelName(SIC_DEBUG_FRAMEWORK_VERBOSE, "SIC_DEBUG_FRAMEWORK_VERBOSE")
 
 logging.Logger.debug_framework = debug_framework
 logging.Logger.debug_framework_verbose = debug_framework_verbose
-
-

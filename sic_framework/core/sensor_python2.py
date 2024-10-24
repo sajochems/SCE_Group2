@@ -1,6 +1,7 @@
 from abc import abstractmethod
 
 from sic_framework.core.component_python2 import SICComponent
+
 from .message_python2 import SICMessage
 
 
@@ -16,7 +17,7 @@ class SICSensor(SICComponent):
         """
         Start the service. This method must be called by the user at the end of the constructor
         """
-        self.logger.info('Starting sensor {}'.format(self.get_component_name()))
+        self.logger.info("Starting sensor {}".format(self.get_component_name()))
 
         super(SICSensor, self).start()
 

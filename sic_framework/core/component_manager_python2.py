@@ -1,14 +1,23 @@
 import copy
 import threading
 import time
-from signal import signal, SIGTERM, SIGINT
+from signal import SIGINT, SIGTERM, signal
 from sys import exit
 
 import sic_framework.core.sic_logging
-from sic_framework.core.utils import is_sic_instance, MAGIC_STARTED_COMPONENT_MANAGER_TEXT
+from sic_framework.core.utils import (
+    MAGIC_STARTED_COMPONENT_MANAGER_TEXT,
+    is_sic_instance,
+)
 
-from . import utils, sic_logging
-from .message_python2 import SICMessage, SICStopRequest, SICRequest, SICIgnoreRequestMessage, SICSuccessMessage
+from . import sic_logging, utils
+from .message_python2 import (
+    SICIgnoreRequestMessage,
+    SICMessage,
+    SICRequest,
+    SICStopRequest,
+    SICSuccessMessage,
+)
 from .sic_redis import SICRedis
 
 
@@ -48,7 +57,9 @@ class SICComponentManager(object):
         self.ip = utils.get_ip_adress()
 
         self.active_components = []
-        self.component_classes = {cls.get_component_name(): cls for cls in component_classes}
+        self.component_classes = {
+            cls.get_component_name(): cls for cls in component_classes
+        }
         self.component_counter = 0
 
         self.stop_event = threading.Event()
@@ -64,7 +75,10 @@ class SICComponentManager(object):
         # TODO FIXME
         # self._sync_time()
 
-        self.logger.info(MAGIC_STARTED_COMPONENT_MANAGER_TEXT + ' on ip "{}" with components:'.format(self.ip))
+        self.logger.info(
+            MAGIC_STARTED_COMPONENT_MANAGER_TEXT
+            + ' on ip "{}" with components:'.format(self.ip)
+        )
         for c in self.component_classes.values():
             self.logger.info(" - {}".format(c.get_component_name()))
 
@@ -79,7 +93,7 @@ class SICComponentManager(object):
         # wait for the signal to stop, loop is necessary for ctrl-c to work on python2
         try:
             while True:
-                self.stop_event.wait(timeout=.1)
+                self.stop_event.wait(timeout=0.1)
                 if self.stop_event.is_set():
                     break
         except KeyboardInterrupt:
@@ -95,13 +109,23 @@ class SICComponentManager(object):
         """
         # Check if the time of this device is off, because that would interfere with sensor fusion across devices
         time_diff_seconds = abs(time.time() - float("{}.{}".format(*self.redis.time())))
-        if time_diff_seconds > .1:
-            print("Warning: device time difference to redis server is {} seconds".format(time_diff_seconds))
-            print("This is allowed (max: {}), but might cause data to fused incorrectly in components.".format(
-                self.MAX_REDIS_SERVER_TIME_DIFFERENCE))
+        if time_diff_seconds > 0.1:
+            print(
+                "Warning: device time difference to redis server is {} seconds".format(
+                    time_diff_seconds
+                )
+            )
+            print(
+                "This is allowed (max: {}), but might cause data to fused incorrectly in components.".format(
+                    self.MAX_REDIS_SERVER_TIME_DIFFERENCE
+                )
+            )
         if time_diff_seconds > self.MAX_REDIS_SERVER_TIME_DIFFERENCE:
-            raise ValueError("The time on this device differs by {} seconds from the redis server (max: {}s)".format(
-                time_diff_seconds, self.MAX_REDIS_SERVER_TIME_DIFFERENCE))
+            raise ValueError(
+                "The time on this device differs by {} seconds from the redis server (max: {}s)".format(
+                    time_diff_seconds, self.MAX_REDIS_SERVER_TIME_DIFFERENCE
+                )
+            )
 
     def _handle_request(self, request):
         """
@@ -118,11 +142,19 @@ class SICComponentManager(object):
 
         # reply to the request if the component manager can start the component
         if request.component_name in self.component_classes:
-            print("{} handling request {}".format(self.__class__.__name__, request.component_name))
+            print(
+                "{} handling request {}".format(
+                    self.__class__.__name__, request.component_name
+                )
+            )
 
             return self.start_component(request)
         else:
-            print("{} ignored request {}".format(self.__class__.__name__, request.component_name))
+            print(
+                "{} ignored request {}".format(
+                    self.__class__.__name__, request.component_name
+                )
+            )
             return SICIgnoreRequestMessage()
 
     def get_manager_logger(self, log_level=sic_logging.INFO):
@@ -151,11 +183,12 @@ class SICComponentManager(object):
         try:
             stop_event = threading.Event()
             ready_event = threading.Event()
-            component = component_class(stop_event=stop_event,
-                                        ready_event=ready_event,
-                                        log_level=request.log_level,
-                                        conf=request.conf,
-                                        )
+            component = component_class(
+                stop_event=stop_event,
+                ready_event=ready_event,
+                log_level=request.log_level,
+                conf=request.conf,
+            )
             self.active_components.append(component)
 
             # TODO daemon=False could be set to true, but then the component cannot clean up properly
@@ -169,8 +202,11 @@ class SICComponentManager(object):
 
             if component._ready_event.is_set() is False:
                 self.logger.error(
-                    "Component {} refused to start within {} seconds!".format(component.get_component_name(),
-                                                                              component.COMPONENT_STARTUP_TIMEOUT))
+                    "Component {} refused to start within {} seconds!".format(
+                        component.get_component_name(),
+                        component.COMPONENT_STARTUP_TIMEOUT,
+                    )
+                )
                 # Todo do something!
 
             # inform the user their component has started
@@ -179,19 +215,21 @@ class SICComponentManager(object):
             return reply
 
         except Exception as e:
-            self.logger.exception(e)  # maybe not needed if already sending back a not started message
+            self.logger.exception(
+                e
+            )  # maybe not needed if already sending back a not started message
             if component is not None:
                 component.stop()
             return SICNotStartedMessage(e)
 
     def stop(self, *args):
         self.stop_event.set()
-        print('Trying to exit manager gracefully...')
+        print("Trying to exit manager gracefully...")
         try:
             self.redis.close()
             for component in self.active_components:
                 component.stop()
                 # component._stop_event.set()
-            print('Graceful exit was successful')
+            print("Graceful exit was successful")
         except Exception as err:
-            print('Graceful exit has failed: {}'.format(err))
+            print("Graceful exit has failed: {}".format(err))

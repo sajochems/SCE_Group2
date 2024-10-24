@@ -6,7 +6,7 @@ from sic_framework.core.component_python2 import SICComponent
 from sic_framework.core.utils import is_sic_instance
 
 from . import sic_logging
-from .message_python2 import SICMessage, SICConfMessage
+from .message_python2 import SICConfMessage, SICMessage
 
 
 class MessageQueue(collections.deque):
@@ -24,9 +24,21 @@ class MessageQueue(collections.deque):
 
         if len(self) == self.maxlen:
             self.dropped_messages_counter += 1
-            if self.dropped_messages_counter in {5, 10, 50, 100, 200, 1000, 5000, 10000}:
-                self.logger.warning("Dropped {} messages of type {}".format(self.dropped_messages_counter,
-                                                                            x.get_message_name()))
+            if self.dropped_messages_counter in {
+                5,
+                10,
+                50,
+                100,
+                200,
+                1000,
+                5000,
+                10000,
+            }:
+                self.logger.warning(
+                    "Dropped {} messages of type {}".format(
+                        self.dropped_messages_counter, x.get_message_name()
+                    )
+                )
         return super(MessageQueue, self).appendleft(x)
 
 
@@ -61,11 +73,15 @@ class SICMessageDictionary:
                 source_component_name = source_component.get_component_name()
             except AttributeError:
                 # Object is SICConnector and not SICComponent
-                source_component_name = source_component.component_class.get_component_name()
+                source_component_name = (
+                    source_component.component_class.get_component_name()
+                )
 
         messages = self.messages[type.get_message_name()]
 
-        assert len(messages), "Attempting to get message from empty buffer (framework issue, should not be possible)"
+        assert len(
+            messages
+        ), "Attempting to get message from empty buffer (framework issue, should not be possible)"
 
         for message in messages:
             if source_component is not None:
@@ -76,7 +92,9 @@ class SICMessageDictionary:
                 # if no source component is set, just accept any (should be only 1)
                 return message
 
-        raise IndexError("Input of type {} with source: {} not found.".format(type, source_component))
+        raise IndexError(
+            "Input of type {} with source: {} not found.".format(type, source_component)
+        )
 
 
 class SICService(SICComponent):
@@ -85,7 +103,9 @@ class SICService(SICComponent):
     """
 
     MAX_MESSAGE_BUFFER_SIZE = 10
-    MAX_MESSAGE_AGE_DIFF_IN_SECONDS = .5  # TODO tune? maybe in config? Can be use case dependent
+    MAX_MESSAGE_AGE_DIFF_IN_SECONDS = (
+        0.5  # TODO tune? maybe in config? Can be use case dependent
+    )
 
     def __init__(self, *args, **kwargs):
         super(SICService, self).__init__(*args, **kwargs)
@@ -126,18 +146,23 @@ class SICService(SICComponent):
         """
 
         self.logger.debug_framework_verbose(
-            "input buffers: {}".format([(k, len(v)) for k, v in self._input_buffers.items()]))
-
-
+            "input buffers: {}".format(
+                [(k, len(v)) for k, v in self._input_buffers.items()]
+            )
+        )
 
         # First, get the most recent message for all buffers. Then, select the oldest message from these messages.
         # The timestamp of this message corresponds to the most recent timestamp for which we have all information
         # available
         try:
-            selected_timestamp = min([buffer[0]._timestamp for buffer in self._input_buffers.values()])
+            selected_timestamp = min(
+                [buffer[0]._timestamp for buffer in self._input_buffers.values()]
+            )
         except IndexError:
             # Not all buffers are full, so do not pop messages
-            raise PopMessageException("Could not collect aligned input data from buffers, not all buffers filled")
+            raise PopMessageException(
+                "Could not collect aligned input data from buffers, not all buffers filled"
+            )
 
         # Buffers are created dynamically, based on the source components. Only start executing once
         # we have at least one buffer per message type
@@ -146,7 +171,6 @@ class SICService(SICComponent):
 
         # Second, we go through each buffer and check if we can find a message that is within the time difference
         # threshold. Duplicate input types are in separate buffers based on their _previous_component attribute.
-
 
         # TODO might raise
         # RuntimeError: deque mutated during iteration
@@ -157,14 +181,19 @@ class SICService(SICComponent):
             # get the newest message in the buffer closest to the selected timestamp
             # if there is none, we raise a ValueError to stop searching and wait for new data again
             for msg in buffer:
-                if abs(msg._timestamp - selected_timestamp) <= self.MAX_MESSAGE_AGE_DIFF_IN_SECONDS:
+                if (
+                    abs(msg._timestamp - selected_timestamp)
+                    <= self.MAX_MESSAGE_AGE_DIFF_IN_SECONDS
+                ):
 
                     message_dict.set(msg)
                     messages_to_remove.append(msg)
                     break
             else:
                 # the timestamps across all buffers did not align within the threshold, so do not pop messages
-                raise PopMessageException("Could not collect aligned input data from buffers, no matching timestamps")
+                raise PopMessageException(
+                    "Could not collect aligned input data from buffers, no matching timestamps"
+                )
 
         # Third, we now know all buffers contain a valid (aligned) message for the timestamp
         # only then, consume these messages from the buffers and return the messages.
@@ -200,7 +229,7 @@ class SICService(SICComponent):
         while not self._stop_event.is_set():
             # wait for new data to be set by the _process_message callback, and check every .1 second to check if the
             # service must stop
-            self._new_data_event.wait(timeout=.1)
+            self._new_data_event.wait(timeout=0.1)
 
             if not self._new_data_event.is_set():
                 continue
@@ -213,7 +242,9 @@ class SICService(SICComponent):
             try:
                 messages, timestamp = self._pop_messages()
             except PopMessageException:
-                self.logger.debug_framework_verbose("Did not pop messages from buffers.")
+                self.logger.debug_framework_verbose(
+                    "Did not pop messages from buffers."
+                )
                 continue
 
             output = self.execute(messages)

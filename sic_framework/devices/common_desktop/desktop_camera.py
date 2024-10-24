@@ -71,5 +71,5 @@ class DesktopCamera(SICConnector):
     component_class = DesktopCameraSensor
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     SICComponentManager([DesktopCameraSensor])

@@ -10,6 +10,7 @@ PYTHON_VERSION_IS_2 = sys.version_info[0] < 3
 
 MAGIC_STARTED_COMPONENT_MANAGER_TEXT = "Started component manager"
 
+
 def get_ip_adress():
     """
     This is harder than you think!
@@ -20,16 +21,17 @@ def get_ip_adress():
     s.settimeout(0)
     try:
         # doesn't even have to be reachable
-        s.connect(('10.254.254.254', 1))
+        s.connect(("10.254.254.254", 1))
         IP = s.getsockname()[0]
     except Exception:
-        IP = '127.0.0.1'
+        IP = "127.0.0.1"
     finally:
         s.close()
     return IP
 
 
 import socket
+
 
 def ping_server(server, port, timeout=3):
     """ping server"""
@@ -48,8 +50,7 @@ def get_username_hostname_ip():
     return getpass.getuser() + "_" + socket.gethostname() + "_" + get_ip_adress()
 
 
-
-def ensure_binary(s, encoding='utf-8', errors='strict'):
+def ensure_binary(s, encoding="utf-8", errors="strict"):
     """
     From a future six version.
     Coerce **s** to six.binary_type.
@@ -67,6 +68,7 @@ def ensure_binary(s, encoding='utf-8', errors='strict'):
     if isinstance(s, six.text_type):
         return s.encode(encoding, errors)
     raise TypeError("not expecting type '%s'" % type(s))
+
 
 def str_if_bytes(data):
     """
@@ -111,7 +113,6 @@ def type_equal_sic(a, b):
     :return:
     """
     return type(a).__name__ == type(b).__name__
-
 
 
 if __name__ == "__main__":

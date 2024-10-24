@@ -1,7 +1,11 @@
-from sic_framework import utils, SICComponentManager, SICMessage, SICRequest, \
-    SICConfMessage
-
-from sic_framework import SICActuator
+from sic_framework import (
+    SICActuator,
+    SICComponentManager,
+    SICConfMessage,
+    SICMessage,
+    SICRequest,
+    utils,
+)
 from sic_framework.core.connector import SICConnector
 
 if utils.PYTHON_VERSION_IS_2:
@@ -14,6 +18,7 @@ class NaoLEDRequest(SICRequest):
     name - RGB LED or Group name (string), see http://doc.aldebaran.com/2-5/naoqi/sensors/alleds.html
     value - boolean to turn on/off
     """
+
     def __init__(self, name, value):
         super(NaoLEDRequest, self).__init__()
         self.name = name
@@ -26,6 +31,7 @@ class NaoSetIntensityRequest(SICRequest):
     name - RGB LED or Group name (string), see http://doc.aldebaran.com/2-5/naoqi/sensors/alleds.html
     intensity - float [0,1] representing intensity value
     """
+
     def __init__(self, name, intensity):
         super(NaoSetIntensityRequest, self).__init__()
         self.name = name
@@ -37,6 +43,7 @@ class NaoGetIntensityRequest(SICRequest):
     Gets the intensity of LED(s)
     name - RGB LED or Group name (string), see http://doc.aldebaran.com/2-5/naoqi/sensors/alleds.html
     """
+
     def __init__(self, name):
         super(NaoGetIntensityRequest, self).__init__()
         self.name = name
@@ -47,6 +54,7 @@ class NaoGetIntensityReply(SICMessage):
     SICMessage that contains the intensity of LED(s) as per requested by NaoGetIntensityRequest
     value - float [0, 1] representing the intensity value
     """
+
     def __init__(self, value):
         super(NaoGetIntensityReply, self).__init__()
         self.value = value
@@ -61,7 +69,8 @@ class NaoFadeRGBRequest(SICRequest):
     b - float [0, 1] representing intensity of blue channel
     duration - float representing time in seconds to fade to given color. Default = 0, so instantly
     """
-    def __init__(self, name, r, g, b, duration=0.):
+
+    def __init__(self, name, r, g, b, duration=0.0):
         super(NaoFadeRGBRequest, self).__init__()
         self.name = name
         self.r = r
@@ -77,11 +86,13 @@ class NaoFadeListRGBRequest(SICRequest):
     rgbs - list of RGB LED values in hexa-decimal [0x00RRGGBB, ...]
     durations - list of respective time to reach each RGB value in rgbs
     """
+
     def __init__(self, name, rgbs, durations):
         super(NaoFadeListRGBRequest, self).__init__()
         self.name = name
         self.rgbs = rgbs
         self.durations = durations
+
 
 class NaoBasicAwarenessRequest(SICRequest):
     """
@@ -91,7 +102,10 @@ class NaoBasicAwarenessRequest(SICRequest):
     engagement_mode - string to value engagement mode, see http://doc.aldebaran.com/2-5/naoqi/interaction/autonomousabilities/albasicawareness.html#albasicawareness-engagement-modes
     tracking_mode - string to value tracking mode, see http://doc.aldebaran.com/2-5/naoqi/interaction/autonomousabilities/albasicawareness.html#albasicawareness-tracking-modes
     """
-    def __init__(self, value, stimulus_detection=None, engagement_mode=None, tracking_mode=None):
+
+    def __init__(
+        self, value, stimulus_detection=None, engagement_mode=None, tracking_mode=None
+    ):
         super(NaoBasicAwarenessRequest, self).__init__()
         self.value = value
         self.stimulus_detection = stimulus_detection if stimulus_detection else []
@@ -104,14 +118,15 @@ class NaoqiLEDsActuator(SICActuator):
     Wrapper class for sevaral Naoqi autonomous abilities, see http://doc.aldebaran.com/2-5/ref/life/autonomous_abilities_management.html?highlight=autonomous%20life
     Also implements wakeUp and rest requests.
     """
+
     def __init__(self, *args, **kwargs):
         super(NaoqiLEDsActuator, self).__init__(*args, **kwargs)
 
         self.session = qi.Session()
-        self.session.connect('tcp://127.0.0.1:9559')
+        self.session.connect("tcp://127.0.0.1:9559")
 
         # Connect to AL proxies
-        self.leds = self.session.service('ALLeds')
+        self.leds = self.session.service("ALLeds")
 
     @staticmethod
     def get_conf():
@@ -119,8 +134,13 @@ class NaoqiLEDsActuator(SICActuator):
 
     @staticmethod
     def get_inputs():
-        return [NaoFadeRGBRequest, NaoFadeListRGBRequest, NaoLEDRequest,
-                NaoSetIntensityRequest, NaoGetIntensityRequest]
+        return [
+            NaoFadeRGBRequest,
+            NaoFadeListRGBRequest,
+            NaoLEDRequest,
+            NaoSetIntensityRequest,
+            NaoGetIntensityRequest,
+        ]
 
     @staticmethod
     def get_output():
@@ -128,7 +148,9 @@ class NaoqiLEDsActuator(SICActuator):
 
     def execute(self, message):
         if message == NaoFadeRGBRequest:
-            self.leds.fadeRGB(message.name, message.r, message.g, message.b, message.duration)
+            self.leds.fadeRGB(
+                message.name, message.r, message.g, message.b, message.duration
+            )
         elif message == NaoFadeListRGBRequest:
             self.leds.fadeListRGB(message.name, message.rgbs, message.durations)
         elif message == NaoLEDRequest:
@@ -147,5 +169,5 @@ class NaoqiLEDs(SICConnector):
     component_class = NaoqiLEDsActuator
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     SICComponentManager([NaoqiLEDs])

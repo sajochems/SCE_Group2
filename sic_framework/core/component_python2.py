@@ -6,9 +6,18 @@ import six
 
 import sic_framework.core.sic_logging
 from sic_framework.core.utils import is_sic_instance
+
 from . import sic_logging, utils
-from .message_python2 import SICConfMessage, SICRequest, SICMessage, SICSuccessMessage, \
-    SICControlRequest, SICPingRequest, SICPongMessage, SICStopRequest
+from .message_python2 import (
+    SICConfMessage,
+    SICControlRequest,
+    SICMessage,
+    SICPingRequest,
+    SICPongMessage,
+    SICRequest,
+    SICStopRequest,
+    SICSuccessMessage,
+)
 from .sic_redis import SICRedis
 
 
@@ -27,13 +36,16 @@ class SICComponent:
     """
     Abstract class for services that provides functions for the Social Interaction Cloud.
     """
+
     __metaclass__ = ABCMeta
 
     # This parameter controls how long a SICConnector should wait when requesting the service
     # For example, when the robot has to stand up or model parameters need to load to GPU this might be set higher
     COMPONENT_STARTUP_TIMEOUT = 2
 
-    def __init__(self, ready_event=None, stop_event=None, log_level=sic_logging.INFO, conf=None):
+    def __init__(
+        self, ready_event=None, stop_event=None, log_level=sic_logging.INFO, conf=None
+    ):
         self._ip = utils.get_ip_adress()
 
         # the events to control this service running in the thread created by the factory
@@ -54,7 +66,6 @@ class SICComponent:
 
         # load config if set by user
         self.set_config(conf)
-
 
     def _get_logger(self, log_level):
         """
@@ -82,7 +93,9 @@ class SICComponent:
         has started successfully.
         """
         # register a request handler to handle control requests, e.g. ConnectRequest
-        self._redis.register_request_handler(self.get_request_reply_channel(self._ip), self._handle_request)
+        self._redis.register_request_handler(
+            self.get_request_reply_channel(self._ip), self._handle_request
+        )
 
         # communicate the service is set up and listening to its inputs
         self._ready_event.set()
@@ -99,7 +112,9 @@ class SICComponent:
         """
         channel = connection_request.channel
         if channel in self._input_channels:
-            self.logger.debug_framework("Channel {} is already connected to this component".format(channel))
+            self.logger.debug_framework(
+                "Channel {} is already connected to this component".format(channel)
+            )
             return
         self._input_channels.append(channel)
         self._redis.register_message_handler(channel, self._handle_message)
@@ -111,11 +126,13 @@ class SICComponent:
         """
         An handler for control requests such as ConnectRequest. Normal Requests are passed to the on_request handler.
         Also logs the error to the remote log stream in case an exeption occured in the user-defined handler.
-        :param request: 
-        :return: 
+        :param request:
+        :return:
         """
 
-        self.logger.debug_framework_verbose("Handling request {}".format(request.get_message_name()))
+        self.logger.debug_framework_verbose(
+            "Handling request {}".format(request.get_message_name())
+        )
 
         if is_sic_instance(request, SICPingRequest):
             return SICPongMessage()
@@ -232,8 +249,10 @@ class SICComponent:
         :param conf: a SICConfMessage with the parameters as fields
         :type conf: SICConfMessage
         """
-        assert is_sic_instance(conf, SICConfMessage), "Configuration message should be of type SICConfMessage, " \
-                                                        "is {type_conf}".format(type_conf=type(conf))
+        assert is_sic_instance(conf, SICConfMessage), (
+            "Configuration message should be of type SICConfMessage, "
+            "is {type_conf}".format(type_conf=type(conf))
+        )
 
         if conf == self.params:
             self.logger.info("New configuration is identical to current configuration.")
@@ -247,10 +266,12 @@ class SICComponent:
         return time.time()
 
     def stop(self, *args):
-        self.logger.debug('Trying to exit {} gracefully...'.format(self.get_component_name()))
+        self.logger.debug(
+            "Trying to exit {} gracefully...".format(self.get_component_name())
+        )
         try:
             self._redis.close()
             self._stop_event.set()
-            self.logger.debug('Graceful exit was successful')
+            self.logger.debug("Graceful exit was successful")
         except Exception as err:
-            self.logger.error('Graceful exit has failed: {}'.format(err.message))
+            self.logger.error("Graceful exit has failed: {}".format(err.message))

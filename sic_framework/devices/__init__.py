@@ -1,2 +1,2 @@
-from .pepper import Pepper
 from .nao import Nao
+from .pepper import Pepper

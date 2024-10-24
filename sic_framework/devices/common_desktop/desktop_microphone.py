@@ -21,12 +21,13 @@ class DesktopMicrophoneSensor(SICSensor):
         self.device = pyaudio.PyAudio()
 
         # open stream using callback (3)
-        self.stream = self.device.open(format=pyaudio.paInt16,
-                                       channels=1,
-                                       rate=self.params.sample_rate,
-                                       input=True,
-                                       output=False)
-
+        self.stream = self.device.open(
+            format=pyaudio.paInt16,
+            channels=1,
+            rate=self.params.sample_rate,
+            input=True,
+            output=False,
+        )
 
     @staticmethod
     def get_conf():
@@ -56,5 +57,5 @@ class DesktopMicrophone(SICConnector):
     component_class = DesktopMicrophoneSensor
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     SICComponentManager([DesktopMicrophoneSensor])

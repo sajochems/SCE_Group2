@@ -1,30 +1,46 @@
-import queue
 import pathlib
+import queue
 
 import cv2
 import numpy as np
 import torch
 import torchvision
-
 from numpy import array
 
 from sic_framework.core import sic_logging
 from sic_framework.core.component_manager_python2 import SICComponentManager
 from sic_framework.core.component_python2 import SICComponent
 from sic_framework.core.connector import SICConnector
-from sic_framework.core.message_python2 import CompressedImageMessage, SICMessage, BoundingBox, BoundingBoxesMessage, \
-    SICConfMessage, SICRequest, CompressedImageRequest
+from sic_framework.core.message_python2 import (
+    BoundingBox,
+    BoundingBoxesMessage,
+    CompressedImageMessage,
+    CompressedImageRequest,
+    SICConfMessage,
+    SICMessage,
+    SICRequest,
+)
 from sic_framework.core.service_python2 import SICService
-from sic_framework.services.face_detection_dnn import attempt_load, scale_coords, xyxy2xywh, letterbox
-from sic_framework.services.face_detection_dnn import non_max_suppression
-
-
-
+from sic_framework.services.face_detection_dnn import (
+    attempt_load,
+    letterbox,
+    non_max_suppression,
+    scale_coords,
+    xyxy2xywh,
+)
 
 
 class DNNFaceDetectionConf(SICConfMessage):
-    def __init__(self, conf_threshold: float = .2, iou_threshold: float = .5, classes=None, agnostic_nms=False,
-                 resize_to=None, augment=False, kpt_label=5):
+    def __init__(
+        self,
+        conf_threshold: float = 0.2,
+        iou_threshold: float = 0.5,
+        classes=None,
+        agnostic_nms=False,
+        resize_to=None,
+        augment=False,
+        kpt_label=5,
+    ):
         """
         :param conf_threshold       model class confidence threshold
         :param iou_threshold        non-maximum suppression intersection-over-union threshold
@@ -61,7 +77,7 @@ class DNNFaceDetectionComponent(SICComponent):
         super(DNNFaceDetectionComponent, self).__init__(*args, **kwargs)
 
         # Initialize face recognition data
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         root = str(pathlib.Path(__file__).parent.resolve())
         self.model = attempt_load(root + "/yolov7-face.pt", map_location=self.device)
@@ -70,7 +86,6 @@ class DNNFaceDetectionComponent(SICComponent):
 
         self.input_message_buffer = queue.Queue()
 
-
     def start(self):
         super().start()
 
@@ -78,7 +93,6 @@ class DNNFaceDetectionComponent(SICComponent):
             message = self.input_message_buffer.get()
             bboxes = self.detect(message.image)
             self.output_message(bboxes)
-
 
     @staticmethod
     def get_inputs():
@@ -98,8 +112,6 @@ class DNNFaceDetectionComponent(SICComponent):
             pass
         self.input_message_buffer.put(message)
 
-
-
     def on_request(self, request):
         return self.detect(request.image)
 
@@ -116,24 +128,39 @@ class DNNFaceDetectionComponent(SICComponent):
 
         pred = self.model(image_tensor, augment=self.params.augment)[0]
         # Apply NMS
-        pred = non_max_suppression(pred, self.params.conf_threshold, self.params.iou_threshold,
-                                   classes=self.params.classes, agnostic=self.params.agnostic_nms,
-                                   kpt_label=self.params.kpt_label)
+        pred = non_max_suppression(
+            pred,
+            self.params.conf_threshold,
+            self.params.iou_threshold,
+            classes=self.params.classes,
+            agnostic=self.params.agnostic_nms,
+            kpt_label=self.params.kpt_label,
+        )
 
         faces = []
 
         h, w, c = original_shape
-        gn = torch.tensor(original_shape)[[1, 0, 1, 0]].to(self.device)  # normalization gain whwh
+        gn = torch.tensor(original_shape)[[1, 0, 1, 0]].to(
+            self.device
+        )  # normalization gain whwh
         gn_lks = torch.tensor(original_shape)[[1, 0, 1, 0, 1, 0, 1, 0, 1, 0]].to(
-            self.device)  # normalization gain landmarks
+            self.device
+        )  # normalization gain landmarks
 
         if pred is not None:
             # batch is be one, so squeeze
             det = pred[0]
             if self.params.resize_to is not None:
-                scale_coords(image_tensor.shape[2:], det[:, :4], original_shape, kpt_label=False)
-                scale_coords(image_tensor.shape[2:], det[:, 6:], original_shape, kpt_label=self.params.kpt_label,
-                             step=3)
+                scale_coords(
+                    image_tensor.shape[2:], det[:, :4], original_shape, kpt_label=False
+                )
+                scale_coords(
+                    image_tensor.shape[2:],
+                    det[:, 6:],
+                    original_shape,
+                    kpt_label=self.params.kpt_label,
+                    step=3,
+                )
 
             for j in range(det.size()[0]):  # for every detection in the image
                 xywh = (xyxy2xywh(det[j, :4].view(1, 4)) / gn).view(-1)
@@ -146,7 +173,9 @@ class DNNFaceDetectionComponent(SICComponent):
                 y1 = int(xywh[1] * h - 0.5 * xywh[3] * h)
                 w2 = int(xywh[2] * w)
                 h2 = int(xywh[3] * h)
-                bbox = BoundingBox(x1, y1, w2, h2, identifier=class_num, confidence=conf)
+                bbox = BoundingBox(
+                    x1, y1, w2, h2, identifier=class_num, confidence=conf
+                )
                 faces.append(bbox)
 
         return BoundingBoxesMessage(faces)
@@ -156,7 +185,7 @@ class DNNFaceDetection(SICConnector):
     component_class = DNNFaceDetectionComponent
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # mod = DNNFaceDetectionComponent()
     # mod._start()
     SICComponentManager([DNNFaceDetectionComponent])

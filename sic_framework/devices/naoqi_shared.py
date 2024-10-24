@@ -1,21 +1,32 @@
 from __future__ import print_function
+
+from abc import ABCMeta
+
 from sic_framework.core import sic_redis, utils
 from sic_framework.core.utils import MAGIC_STARTED_COMPONENT_MANAGER_TEXT
 from sic_framework.devices.common_naoqi.naoqi_autonomous import *
-from sic_framework.devices.common_naoqi.naoqi_button import NaoqiButtonSensor, NaoqiButton
-from sic_framework.devices.common_naoqi.naoqi_leds import *
-from sic_framework.devices.common_naoqi.naoqi_lookat import NaoqiLookAt, NaoqiLookAtComponent
-from sic_framework.devices.common_naoqi.naoqi_motion import *
+from sic_framework.devices.common_naoqi.naoqi_button import (
+    NaoqiButton,
+    NaoqiButtonSensor,
+)
 from sic_framework.devices.common_naoqi.naoqi_camera import *
+from sic_framework.devices.common_naoqi.naoqi_leds import *
+from sic_framework.devices.common_naoqi.naoqi_lookat import (
+    NaoqiLookAt,
+    NaoqiLookAtComponent,
+)
 from sic_framework.devices.common_naoqi.naoqi_microphone import *
+from sic_framework.devices.common_naoqi.naoqi_motion import *
 from sic_framework.devices.common_naoqi.naoqi_motion_recorder import *
 from sic_framework.devices.common_naoqi.naoqi_motion_streamer import *
 from sic_framework.devices.common_naoqi.naoqi_speakers import *
 from sic_framework.devices.common_naoqi.naoqi_stiffness import *
 from sic_framework.devices.common_naoqi.naoqi_text_to_speech import *
-from sic_framework.devices.common_naoqi.naoqi_tracker import NaoqiTracker, NaoqiTrackerActuator
+from sic_framework.devices.common_naoqi.naoqi_tracker import (
+    NaoqiTracker,
+    NaoqiTrackerActuator,
+)
 from sic_framework.devices.device import SICDevice
-from abc import ABCMeta
 
 shared_naoqi_components = [
     NaoqiTopCameraSensor,
@@ -38,21 +49,28 @@ shared_naoqi_components = [
 class Naoqi(SICDevice):
     __metaclass__ = ABCMeta
 
-    def __init__(self, ip,
-                 robot_type,
-                 top_camera_conf=None,
-                 bottom_camera_conf=None,
-                 mic_conf=None,
-                 motion_conf=None,
-                 tts_conf=None,
-                 motion_record_conf=None,
-                 motion_stream_conf=None,
-                 stiffness_conf=None,
-                 speaker_conf=None,
-                 lookat_conf=None,
-                 username=None, passwords=None,
-                 ):
-        super().__init__(ip, username=username, passwords=passwords, )
+    def __init__(
+        self,
+        ip,
+        robot_type,
+        top_camera_conf=None,
+        bottom_camera_conf=None,
+        mic_conf=None,
+        motion_conf=None,
+        tts_conf=None,
+        motion_record_conf=None,
+        motion_stream_conf=None,
+        stiffness_conf=None,
+        speaker_conf=None,
+        lookat_conf=None,
+        username=None,
+        passwords=None,
+    ):
+        super().__init__(
+            ip,
+            username=username,
+            passwords=passwords,
+        )
 
         # Set the component configs
         self.configs[NaoqiTopCamera] = top_camera_conf
@@ -66,7 +84,10 @@ class Naoqi(SICDevice):
         self.configs[NaoqiSpeaker] = speaker_conf
         self.configs[NaoqiLookAt] = lookat_conf
 
-        assert robot_type in ["nao", "pepper"], "Robot type must be either 'nao' or 'pepper'"
+        assert robot_type in [
+            "nao",
+            "pepper",
+        ], "Robot type must be either 'nao' or 'pepper'"
 
         # self.auto_install()
 
@@ -78,9 +99,13 @@ class Naoqi(SICDevice):
 
         self.stop_cmd = """
                 pkill -f "python2 {}.py"
-                """.format(robot_type)
+                """.format(
+            robot_type
+        )
 
-        device_path = "/data/home/nao/.venv_sic/lib/python2.7/site-packages/sic_framework/devices"
+        device_path = (
+            "/data/home/nao/.venv_sic/lib/python2.7/site-packages/sic_framework/devices"
+        )
         robot_wrapper_file = device_path + "/" + robot_type
 
         if robot_type == "nao":
@@ -117,11 +142,13 @@ class Naoqi(SICDevice):
 
                     echo 'Robot: Starting SIC';
                     python2 {robot_wrapper_file}.py --redis_ip={redis_host};
-                    """.format(robot_wrapper_file=robot_wrapper_file, redis_host=redis_hostname)
+                    """.format(
+                robot_wrapper_file=robot_wrapper_file, redis_host=redis_hostname
+            )
         # TODO: Add pepper start command
 
         self.ssh.exec_command(self.stop_cmd)
-        time.sleep(.1)
+        time.sleep(0.1)
 
         # on_windows = sys.platform == 'win32'
         # use_pty = not on_windows
@@ -135,13 +162,16 @@ class Naoqi(SICDevice):
 
         # Set up error monitoring
         self.stopping = False
+
         def check_if_exit():
             # wait for the process to exit
             status = stdout.channel.recv_exit_status()
             # if remote threads exits before local main thread, report to user.
             if threading.main_thread().is_alive() and not self.stopping:
                 self.logfile.flush()
-                raise RuntimeError("Remote SIC program has stopped unexpectedly.\nSee sic.log for details")
+                raise RuntimeError(
+                    "Remote SIC program has stopped unexpectedly.\nSee sic.log for details"
+                )
 
         thread = threading.Thread(target=check_if_exit)
         thread.name = "remote_SIC_process_monitor"
@@ -154,9 +184,11 @@ class Naoqi(SICDevice):
 
             if MAGIC_STARTED_COMPONENT_MANAGER_TEXT in line:
                 break
-            time.sleep(.01)
+            time.sleep(0.01)
         else:
-            raise RuntimeError("Could not start SIC on remote device\nSee sic.log for details")
+            raise RuntimeError(
+                "Could not start SIC on remote device\nSee sic.log for details"
+            )
 
         # write the remaining output to the logfile
         def write_logs():
@@ -175,7 +207,6 @@ class Naoqi(SICDevice):
 
         self.stopping = True
         self.ssh.exec_command(self.stop_cmd)
-
 
     @property
     def top_camera(self):

@@ -21,4 +21,12 @@ def draw_bbox_on_image(bbox, img, color=(0, 255, 0)):
         label += "conf: {}".format(bbox.confidence)
 
     if len(label):
-        cv2.putText(img, label, (bbox.x + 5, bbox.y - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        cv2.putText(
+            img,
+            label,
+            (bbox.x + 5, bbox.y - 5),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (255, 255, 255),
+            2,
+        )

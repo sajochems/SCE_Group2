@@ -5,18 +5,27 @@ a response is sent per audio chunk, but sending a long audio chunk might generat
 
 https://github.com/googleapis/python-dialogflow/blob/main/samples/snippets/detect_intent_stream.py
 """
+
 import threading
 import time
 
 import google
 from google.cloud import dialogflow
 from google.oauth2.service_account import Credentials
+from six.moves import queue
+
 from sic_framework import SICComponentManager
 from sic_framework.core.component_python2 import SICComponent
 from sic_framework.core.connector import SICConnector
-from sic_framework.core.message_python2 import AudioMessage, SICConfMessage, SICMessage, SICRequest, SICStopRequest, SICIgnoreRequestMessage
+from sic_framework.core.message_python2 import (
+    AudioMessage,
+    SICConfMessage,
+    SICIgnoreRequestMessage,
+    SICMessage,
+    SICRequest,
+    SICStopRequest,
+)
 from sic_framework.core.utils import is_sic_instance
-from six.moves import queue
 
 
 class GetIntentRequest(SICRequest):
@@ -43,6 +52,7 @@ class StopListeningMessage(SICMessage):
         """
         super().__init__()
         self.session_id = session_id
+
 
 class RecognitionResult(SICMessage):
     def __init__(self, response):
@@ -121,13 +131,22 @@ class QueryResult(SICMessage):
             self.intent = response.query_result.intent.display_name
 
         self.fulfillment_message = None
-        if "query_result" in response and len(response.query_result.fulfillment_messages):
-            self.fulfillment_message = str(response.query_result.fulfillment_messages[0].text.text[0])
+        if "query_result" in response and len(
+            response.query_result.fulfillment_messages
+        ):
+            self.fulfillment_message = str(
+                response.query_result.fulfillment_messages[0].text.text[0]
+            )
 
 
 class DialogflowConf(SICConfMessage):
-    def __init__(self, keyfile_json:dict, sample_rate_hertz: int = 44100,
-                 audio_encoding=dialogflow.AudioEncoding.AUDIO_ENCODING_LINEAR_16, language: str = 'en-US'):
+    def __init__(
+        self,
+        keyfile_json: dict,
+        sample_rate_hertz: int = 44100,
+        audio_encoding=dialogflow.AudioEncoding.AUDIO_ENCODING_LINEAR_16,
+        language: str = "en-US",
+    ):
         """
         :param keyfile_json         Dict of google service account json key file, which has access to your dialogflow
                                     agent. Example `keyfile_json = json.load(open("my-dialogflow-project.json"))`
@@ -190,7 +209,9 @@ class DialogflowComponent(SICComponent):
             synthesize_speech_config=synt_conf,
         )
 
-        self.query_input = dialogflow.QueryInput(audio_config=self.dialogflow_audio_config)
+        self.query_input = dialogflow.QueryInput(
+            audio_config=self.dialogflow_audio_config
+        )
         self.message_was_final = threading.Event()
         self.audio_buffer = queue.Queue(maxsize=1)
         self.dialogflow_is_init = True
@@ -234,9 +255,11 @@ class DialogflowComponent(SICComponent):
         try:
             # first request to Dialogflow needs to be a setup request with the session parameters
             # optional: output_audio_config=self.output_audio_config
-            yield dialogflow.StreamingDetectIntentRequest(session=session_path,
-                                                          query_input=self.query_input,
-                                                          query_params=query_params)
+            yield dialogflow.StreamingDetectIntentRequest(
+                session=session_path,
+                query_input=self.query_input,
+                query_params=query_params,
+            )
 
             start_time = time.time()
 
@@ -270,16 +293,24 @@ class DialogflowComponent(SICComponent):
     def get_intent(self, input):
         self.message_was_final.clear()  # unset final message flag
 
-        session_path = self.session_client.session_path(self.params.project_id, input.session_id)
-        self.logger.debug("Executing dialogflow request with session id {}".format(input.session_id))
+        session_path = self.session_client.session_path(
+            self.params.project_id, input.session_id
+        )
+        self.logger.debug(
+            "Executing dialogflow request with session id {}".format(input.session_id)
+        )
 
         for context_name, lifespan in input.contexts_dict.items():
             context_id = f"projects/{self.params.project_id}/agent/sessions/{input.session_id}/contexts/{context_name}"
-            self.dialogflow_context.append(dialogflow.Context(name=context_id, lifespan_count=lifespan))
+            self.dialogflow_context.append(
+                dialogflow.Context(name=context_id, lifespan_count=lifespan)
+            )
 
         # add parameters for this request
         query_params = dialogflow.QueryParameters(contexts=self.dialogflow_context)
-        requests = self.request_generator(session_path, query_params)  # get bi-directional request iterator
+        requests = self.request_generator(
+            session_path, query_params
+        )  # get bi-directional request iterator
 
         # responses is a bidirectional iterator object, providing after
         # consuming each yielded request in the requests generator
@@ -290,8 +321,14 @@ class DialogflowComponent(SICComponent):
 
         for response in responses:
             if response.recognition_result:
-                print("\r recognition_result:", response.recognition_result.transcript, end="")
-                self._redis.send_message(self._output_channel, RecognitionResult(response))
+                print(
+                    "\r recognition_result:",
+                    response.recognition_result.transcript,
+                    end="",
+                )
+                self._redis.send_message(
+                    self._output_channel, RecognitionResult(response)
+                )
             if response.query_result:
                 print("query_result:", response.query_result)
                 return QueryResult(response)
@@ -307,8 +344,10 @@ class DialogflowComponent(SICComponent):
 class Dialogflow(SICConnector):
     component_class = DialogflowComponent
 
+
 def main():
     SICComponentManager([DialogflowComponent])
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

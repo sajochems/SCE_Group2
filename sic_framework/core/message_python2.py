@@ -1,9 +1,8 @@
 # import dataclasses
 import io
-import random
 import os
+import random
 import time
-
 
 import numpy as np
 import six
@@ -12,14 +11,20 @@ from . import utils
 
 if not six.PY3:
     import cPickle as pickle
+
     # Set path manually on pepper and nao
-    lib_turbo_jpeg_path = "/" + os.path.join(*__file__.split(os.sep)[:-2]) + "/lib/libturbojpeg/lib32/libturbojpeg.so.0"
+    lib_turbo_jpeg_path = (
+        "/"
+        + os.path.join(*__file__.split(os.sep)[:-2])
+        + "/lib/libturbojpeg/lib32/libturbojpeg.so.0"
+    )
 else:
     lib_turbo_jpeg_path = None
     import pickle
 
 try:
     from turbojpeg import TurboJPEG
+
     turbojpeg = TurboJPEG(lib_turbo_jpeg_path)
 except (RuntimeError, ImportError):
     # fall back to PIL in case TurboJPEG is not installed
@@ -27,7 +32,6 @@ except (RuntimeError, ImportError):
     # it is recommended to install turbojpeg
     print("Turbojpeg not found, falling back to PIL")
     from PIL import Image
-
 
     class FakeTurboJpeg:
         def encode(self, array):
@@ -42,7 +46,6 @@ except (RuntimeError, ImportError):
             image = np.array(image)
             image = np.flipud(image)[:, :, ::-1]
             return image
-
 
     turbojpeg = FakeTurboJpeg()
 
@@ -147,7 +150,11 @@ class SICMessage(object):
                 setattr(self, attr, attr_value.serialize())
                 self.__SIC_MESSAGES.append(attr)
             elif isinstance(attr_value, np.ndarray):
-                if self._compress_images and attr_value.ndim == 3 and attr_value.shape[-1] == 3:
+                if (
+                    self._compress_images
+                    and attr_value.ndim == 3
+                    and attr_value.shape[-1] == 3
+                ):
                     setattr(self, attr, self.np2jpeg(attr_value))
                     self.__JPEG_VALUES.append(attr)
                 else:
@@ -171,19 +178,25 @@ class SICMessage(object):
                 byte_string = utils.ensure_binary(byte_string)
                 return pickle.loads(byte_string)
             else:
-                return pickle.loads(byte_string, encoding='latin1')
+                return pickle.loads(byte_string, encoding="latin1")
 
         except pickle.UnpicklingError as e:
-            raise pickle.UnpicklingError('Byte string is likely not a SICMessage ({})'.format(e))
+            raise pickle.UnpicklingError(
+                "Byte string is likely not a SICMessage ({})".format(e)
+            )
 
         except AttributeError as e:
             raise AttributeError(
                 "You likely haven't imported the class that caused the original error in your SICApplication.\n--> Original error: {}".format(
-                    e))
+                    e
+                )
+            )
         except TypeError as e:
             raise TypeError(
                 "You tried to deserialize a wrong type of message, or sent unpickleable types such as numpy arrays nested in objects. \n Got message:\n\n{}\n\n(original error: {})".format(
-                    byte_string, e))
+                    byte_string, e
+                )
+            )
 
     @classmethod
     def deserialize(cls, byte_string):
@@ -199,21 +212,21 @@ class SICMessage(object):
         for field in obj.__SIC_MESSAGES:
             field_val = getattr(obj, field)
             if not isinstance(field_val, bytes):
-                field_val = field_val.encode('latin1')
+                field_val = field_val.encode("latin1")
             setattr(obj, field, SICMessage.deserialize(field_val))
 
         # Decompress numpy bytes to numpy arrays
         for field in obj.__NP_VALUES:
             field_val = getattr(obj, field)
             if not isinstance(field_val, bytes):
-                field_val = field_val.encode('latin1')
+                field_val = field_val.encode("latin1")
             setattr(obj, field, obj._base2np(field_val))
 
         # Decompress JPEG images to numpy arrays
         for field in obj.__JPEG_VALUES:
             field_val = getattr(obj, field)
             if not isinstance(field_val, bytes):
-                field_val = field_val.encode('latin1')
+                field_val = field_val.encode("latin1")
             setattr(obj, field, obj.jpeg2np(field_val))
 
         return obj
@@ -241,10 +254,12 @@ class SICMessage(object):
 #                             Message types                                          #
 ######################################################################################
 
+
 class SICConfMessage(SICMessage):
     """
     A type of message that carries configuration information for services.
     """
+
     pass
 
 
@@ -252,6 +267,7 @@ class SICRequest(SICMessage):
     """
     A type of message that must be met with a reply, a SICMessage with the same request id, on the same channel.
     """
+
     _request_id = None
 
     def __init__(self, request_id=None):
@@ -274,10 +290,12 @@ class SICControlRequest(SICRequest):
     Superclass for all requests that are related to component control
     """
 
+
 class SICPingRequest(SICControlRequest):
     """
     A request for a ping to check if alive.
     """
+
 
 class SICPongMessage(SICControlMessage):
     """
@@ -303,6 +321,7 @@ class SICIgnoreRequestMessage(SICControlMessage):
     be automatically set to the id of the request this is a reply to, and in effect will
     not reply to the request as the user will ignore this reply.
     """
+
     _request_id = -1
 
 
@@ -310,12 +329,14 @@ class SICIgnoreRequestMessage(SICControlMessage):
 #                             Common data formats                                    #
 ######################################################################################
 
+
 class CompressedImage(object):
     """
     Compress WxHx3 np arrays using libturbo-jpeg to speed up network transfer of
     images. This is LOSSY JPEG compression, which means the image is not exactly the same.
     Non-image array content will be destroyed by this compression.
     """
+
     _compress_images = True
 
     def __init__(self, image):
@@ -326,6 +347,7 @@ class CompressedImageMessage(CompressedImage, SICMessage):
     """
     See CompressedImage
     """
+
     def __init__(self, *args, **kwargs):
         CompressedImage.__init__(self, *args, **kwargs)
         SICMessage.__init__(self)
@@ -335,6 +357,7 @@ class CompressedImageRequest(CompressedImage, SICRequest):
     """
     See CompressedImage
     """
+
     def __init__(self, *args, **kwargs):
         CompressedImage.__init__(self, *args, **kwargs)
         SICRequest.__init__(self)
@@ -346,6 +369,7 @@ class UncompressedImageMessage(SICMessage):
     compressed using default np.save lossless compression. In other words: the
     data does not change after compression, but this is much slower than JPEGCompressedImageMessage
     """
+
     _compress_images = False
 
     def __init__(self, image):
@@ -366,7 +390,9 @@ class Audio(object):
 
     def __init__(self, waveform, sample_rate):
         self.sample_rate = sample_rate
-        assert isinstance(waveform, bytes) or isinstance(waveform, bytearray), "Waveform must be a byte array"
+        assert isinstance(waveform, bytes) or isinstance(
+            waveform, bytearray
+        ), "Waveform must be a byte array"
         self.waveform = waveform
 
 
@@ -374,6 +400,7 @@ class AudioMessage(Audio, SICMessage):
     """
     See Audio
     """
+
     def __init__(self, *args, **kwargs):
         Audio.__init__(self, *args, **kwargs)
         SICMessage.__init__(self)
@@ -383,6 +410,7 @@ class AudioRequest(Audio, SICRequest):
     """
     See Audio
     """
+
     def __init__(self, *args, **kwargs):
         Audio.__init__(self, *args, **kwargs)
         SICRequest.__init__(self)
@@ -392,24 +420,30 @@ class Text(object):
     """
     A simple object with a string as text.
     """
+
     def __init__(self, text):
         self.text = text
+
 
 class TextMessage(Text, SICMessage):
     """
     See Text
     """
+
     def __init__(self, *args, **kwargs):
         Text.__init__(self, *args, **kwargs)
         SICMessage.__init__(self)
+
 
 class TextRequest(Text, SICRequest):
     """
     See Text
     """
+
     def __init__(self, *args, **kwargs):
         Text.__init__(self, *args, **kwargs)
         SICRequest.__init__(self)
+
 
 class BoundingBox(object):
     """
@@ -436,7 +470,9 @@ class BoundingBox(object):
         return np.array([self.x, self.y, self.w, self.h])
 
     def __str__(self):
-        return "BoundingBox\nxywh: {}\nidentifier: {}\nconfidence: {}".format(self.xywh(), self.identifier, self.confidence)
+        return "BoundingBox\nxywh: {}\nidentifier: {}\nconfidence: {}".format(
+            self.xywh(), self.identifier, self.confidence
+        )
 
 
 class BoundingBoxesMessage(SICMessage):

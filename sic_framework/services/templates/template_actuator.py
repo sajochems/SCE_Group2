@@ -1,4 +1,10 @@
-from sic_framework import SICComponentManager, SICActuator, SICConfMessage, SICRequest, SICMessage
+from sic_framework import (
+    SICActuator,
+    SICComponentManager,
+    SICConfMessage,
+    SICMessage,
+    SICRequest,
+)
 from sic_framework.core.connector import SICConnector
 
 
@@ -59,6 +65,6 @@ class Example(SICConnector):
     component_class = ExampleActuator
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Request the service to start using the SICServiceManager on this device
     SICComponentManager([ExampleActuator])

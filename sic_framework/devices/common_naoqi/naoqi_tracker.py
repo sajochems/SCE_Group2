@@ -2,15 +2,16 @@ from sic_framework import utils
 from sic_framework.core.actuator_python2 import SICActuator
 from sic_framework.core.component_manager_python2 import SICComponentManager
 from sic_framework.core.connector import SICConnector
-from sic_framework.core.message_python2 import SICRequest, SICConfMessage, SICMessage
+from sic_framework.core.message_python2 import SICConfMessage, SICMessage, SICRequest
 
 if utils.PYTHON_VERSION_IS_2:
     import qi
 
 
-
 class StartTrackRequest(SICRequest):
-    def __init__(self, target_name, size, mode="Head", effector="None", move_rel_position=None):
+    def __init__(
+        self, target_name, size, mode="Head", effector="None", move_rel_position=None
+    ):
         """
         Request to register a tracking target and track it, see http://doc.aldebaran.com/2-5/naoqi/trackers/index.html
         :param target_name: name of object to track , e.g. RedBall, Face
@@ -31,6 +32,7 @@ class StopAllTrackRequest(SICRequest):
     """
     Request to stop the tracker, and unregister all targets
     """
+
     pass
 
 
@@ -48,6 +50,7 @@ class RemoveAllTargetsRequest(SICRequest):
     """
     Request to remove all tracking targets
     """
+
     pass
 
 
@@ -56,11 +59,11 @@ class NaoqiTrackerActuator(SICActuator):
         super(NaoqiTrackerActuator, self).__init__(*args, **kwargs)
 
         self.session = qi.Session()
-        self.session.connect('tcp://127.0.0.1:9559')
+        self.session.connect("tcp://127.0.0.1:9559")
 
-        self.tracker = self.session.service('ALTracker')
+        self.tracker = self.session.service("ALTracker")
         self.posture = self.session.service("ALRobotPosture")
-        self.motion = self.session.service('ALMotion')
+        self.motion = self.session.service("ALMotion")
 
     @staticmethod
     def get_conf():
@@ -68,7 +71,12 @@ class NaoqiTrackerActuator(SICActuator):
 
     @staticmethod
     def get_inputs():
-        return [StartTrackRequest, StopAllTrackRequest, RemoveTargetRequest, RemoveAllTargetsRequest]
+        return [
+            StartTrackRequest,
+            StopAllTrackRequest,
+            RemoveTargetRequest,
+            RemoveAllTargetsRequest,
+        ]
 
     @staticmethod
     def get_output():
@@ -91,10 +99,18 @@ class NaoqiTrackerActuator(SICActuator):
                         "the value is either the default [0, 0, 0, 0, 0, 0] if never set "
                         "or the previous value passed"
                     )
-                    self.logger.info("Get relative position {}".format(self.tracker.getRelativePosition()))
+                    self.logger.info(
+                        "Get relative position {}".format(
+                            self.tracker.getRelativePosition()
+                        )
+                    )
                 else:
                     self.tracker.setRelativePosition(request.move_rel_position)
-                    self.logger.info("Get relative position {}".format(self.tracker.getRelativePosition()))
+                    self.logger.info(
+                        "Get relative position {}".format(
+                            self.tracker.getRelativePosition()
+                        )
+                    )
             # set effector
             self.tracker.setEffector(request.effector)
             # start tracker
@@ -119,5 +135,5 @@ class NaoqiTracker(SICConnector):
     component_class = NaoqiTrackerActuator
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     SICComponentManager([NaoqiTrackerActuator])

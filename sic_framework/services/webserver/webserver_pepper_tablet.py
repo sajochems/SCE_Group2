@@ -1,28 +1,31 @@
-from sic_framework import SICComponentManager, SICService
-from sic_framework.core.connector import SICConnector
-from sic_framework.core.component_python2 import SICComponent
-from sic_framework.core.message_python2 import SICConfMessage, SICMessage
-from sic_framework.core.utils import is_sic_instance
-
-
-from flask import Flask, render_template_string
-from flask_socketio import SocketIO, emit
 import logging
 import os
 import threading
+
+from flask import Flask, render_template_string
+from flask_socketio import SocketIO, emit
+
+from sic_framework import SICComponentManager, SICService
+from sic_framework.core.component_python2 import SICComponent
+from sic_framework.core.connector import SICConnector
+from sic_framework.core.message_python2 import SICConfMessage, SICMessage
+from sic_framework.core.utils import is_sic_instance
 
 
 class TranscriptMessage(SICMessage):
     def __init__(self, transcript):
         self.transcript = transcript
 
+
 class HtmlMessage(SICMessage):
     def __init__(self, text):
         self.text = text
 
+
 class ButtonClicked(SICMessage):
     def __init__(self, button):
         self.button = button
+
 
 class WebserverConf(SICConfMessage):
     def __init__(self, host: str, port: int):
@@ -34,12 +37,13 @@ class WebserverConf(SICConfMessage):
         self.host = host
         self.port = port
 
+
 class WebserverComponent(SICComponent):
 
     def __init__(self, *args, **kwargs):
 
         super(WebserverComponent, self).__init__(*args, **kwargs)
-        #FIXME this getcwd depends on where the program is executed so it's not flexible.
+        # FIXME this getcwd depends on where the program is executed so it's not flexible.
         template_dir = os.path.join(os.path.abspath(os.getcwd()), "webserver/templates")
 
         # create the web app
@@ -63,7 +67,11 @@ class WebserverComponent(SICComponent):
         """
         self.render_template_string_routes()
         # use ssl_context to run app over https
-        self.app.run(host=self.params.host, port=self.params.port, ssl_context=('cert.pem', 'private.pem'))
+        self.app.run(
+            host=self.params.host,
+            port=self.params.port,
+            ssl_context=("cert.pem", "private.pem"),
+        )
 
     @staticmethod
     def get_conf():
@@ -73,10 +81,9 @@ class WebserverComponent(SICComponent):
     def get_inputs():
         return [HtmlMessage, TranscriptMessage]
 
-
     @staticmethod
     def get_output():
-            HtmlMessage
+        HtmlMessage
 
     # when the HtmlMessage message arrives, feed it to self.input_text
     def on_message(self, message):
@@ -87,8 +94,7 @@ class WebserverComponent(SICComponent):
         if is_sic_instance(message, TranscriptMessage):
             self.transcript = message.transcript
             print(f"receiving transcript: {self.transcript}-------")
-            self.socketio.emit('update_textbox', self.transcript)
-
+            self.socketio.emit("update_textbox", self.transcript)
 
     def render_template_string_routes(self):
         # render a html with bootstrap and a css file once a client is connected
@@ -97,31 +103,25 @@ class WebserverComponent(SICComponent):
             print("render function")
             return render_template_string(self.input_text)
 
-        @self.socketio.on('connect')
+        @self.socketio.on("connect")
         def handle_connect():
-            print('Client connected')
+            print("Client connected")
 
-        @self.socketio.on('disconnect')
+        @self.socketio.on("disconnect")
         def handle_disconnect():
             self.disconnected = True
-            print('Client disconnected')
-
+            print("Client disconnected")
 
         # register clicked_flag event handler
-        @self.socketio.on('clicked_flag')
+        @self.socketio.on("clicked_flag")
         def handle_flag(flag):
             if flag:
                 self.output_message(ButtonClicked(button=flag))
-
 
 
 class Webserver(SICConnector):
     component_class = WebserverComponent
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     SICComponentManager([WebserverComponent])
-
-
-
-

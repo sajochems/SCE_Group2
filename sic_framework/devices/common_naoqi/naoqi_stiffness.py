@@ -1,18 +1,19 @@
-import six
-from sic_framework import SICComponentManager, SICService, utils
 import numpy as np
+import six
+
+from sic_framework import SICComponentManager, SICService, utils
 from sic_framework.core.actuator_python2 import SICActuator
 from sic_framework.core.connector import SICConnector
-from sic_framework.core.message_python2 import SICRequest, SICMessage, SICConfMessage
+from sic_framework.core.message_python2 import SICConfMessage, SICMessage, SICRequest
 from sic_framework.devices.common_naoqi.common_naoqi_motion import NaoqiMotionTools
 
 if utils.PYTHON_VERSION_IS_2:
-    from naoqi import ALProxy
     import qi
+    from naoqi import ALProxy
 
 
 class Stiffness(SICRequest):
-    def __init__(self, stiffness=.7, joints="Body"):
+    def __init__(self, stiffness=0.7, joints="Body"):
         """
         Control the stiffness of the robot joints. This determines how much force the robot should apply to maintain
         the command joint angels. For more information see robot documentation:
@@ -34,15 +35,18 @@ class NaoqiStiffnessActuator(SICActuator, NaoqiMotionTools):
         SICActuator.__init__(self, *args, **kwargs)
 
         self.session = qi.Session()
-        self.session.connect('tcp://127.0.0.1:9559')
+        self.session.connect("tcp://127.0.0.1:9559")
 
         NaoqiMotionTools.__init__(self, qi_session=self.session)
 
-        self.motion = self.session.service('ALMotion')
+        self.motion = self.session.service("ALMotion")
 
         # According to the API you should not set stiffness on these joints. The call fails silently if you do.
-        self.forbidden_pepper_joints = {'Leg', 'HipRoll', 'HipPitch', 'KneePitch'} if self.robot_type == "pepper" else set()
-
+        self.forbidden_pepper_joints = (
+            {"Leg", "HipRoll", "HipPitch", "KneePitch"}
+            if self.robot_type == "pepper"
+            else set()
+        )
 
     @staticmethod
     def get_inputs():
@@ -62,10 +66,9 @@ class NaoqiStiffnessActuator(SICActuator, NaoqiMotionTools):
         return SICMessage()
 
 
-
 class NaoqiStiffness(SICConnector):
     component_class = NaoqiStiffnessActuator
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     SICComponentManager([NaoqiStiffnessActuator])

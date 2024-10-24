@@ -1,13 +1,12 @@
+from multiprocessing import Process
 from threading import Event
 
+import cv2
 from cv2 import StereoSGBM_create, ximgproc
 from numpy import array, float16, mean, median, std
 from sic_old.image_depth_pb2 import ImageDepth
 from sic_old.image_masks_pb2 import ImageMasks
 from sic_old.service import SICservice
-import cv2
-
-from multiprocessing import Process
 
 NAN_PLACEHOLDER = 9999
 
@@ -21,7 +20,7 @@ DISP12_MAX_DIFF = 0
 STEREO_MODE = 3
 LAMBDA = 1000.0
 SIGMA_COLOR = 1.5
-CRITERION = 'median'
+CRITERION = "median"
 
 
 class DepthEstimationService(SICservice):
@@ -47,7 +46,7 @@ class DepthEstimationService(SICservice):
             disp12MaxDiff=DISP12_MAX_DIFF,
             P1=8 * BLOCK_SIZE * BLOCK_SIZE,
             P2=32 * BLOCK_SIZE * BLOCK_SIZE,
-            mode=STEREO_MODE
+            mode=STEREO_MODE,
         )
         self.right_matcher = ximgproc.createRightMatcher(self.left_matcher)
         self.wls_filter = ximgproc.createDisparityWLSFilter(self.left_matcher)
@@ -55,55 +54,70 @@ class DepthEstimationService(SICservice):
         self.wls_filter.setSigmaColor(SIGMA_COLOR)
 
         super(DepthEstimationService, self).__init__(connect, identifier, disconnect)
-        self.events_topic = self.get_full_channel('events')
-        self.calibration_topic = self.get_full_channel('image_calibration')
-        self.segmentation_topic = self.get_full_channel('segmentation_stream')
-        self.depth_topic = self.get_full_channel('depth_stream')
-        self.depth_estimated_topic = self.get_full_channel('depth_estimated')
+        self.events_topic = self.get_full_channel("events")
+        self.calibration_topic = self.get_full_channel("image_calibration")
+        self.segmentation_topic = self.get_full_channel("segmentation_stream")
+        self.depth_topic = self.get_full_channel("depth_stream")
+        self.depth_estimated_topic = self.get_full_channel("depth_estimated")
 
         self.calibration_bytes = self.redis.get(self.calibration_topic)
         self.update_image_properties()
 
     def get_device_types(self):
-        return ['cam']
+        return ["cam"]
 
     def get_channel_action_mapping(self):
-        return {self.get_full_channel('events'): self.execute}
+        return {self.get_full_channel("events"): self.execute}
 
     def execute(self, message):
-        data = message['data'].decode()
-        if data.startswith('SegmentationStarted'):
-            split = data.split(';')
+        data = message["data"].decode()
+        if data.startswith("SegmentationStarted"):
+            split = data.split(";")
             self.img_timestamp = int(split[1])
 
             left, right = self.retrieve_image(self.img_timestamp, want_stereo=True)
             if left is not None and right is not None:
-                estimation_thread = Process(target=self.estimate_depth,
-                                            args=(left, right, None))  # TODO: currently img_segmentation always set to None, no standalone-mode supported.
+                estimation_thread = Process(
+                    target=self.estimate_depth, args=(left, right, None)
+                )  # TODO: currently img_segmentation always set to None, no standalone-mode supported.
                 estimation_thread.start()
 
     def estimate_depth(self, img_left, img_right, img_segmentation):
-        self.produce_event('DepthEstimationStarted;' + str(self.img_timestamp))
+        self.produce_event("DepthEstimationStarted;" + str(self.img_timestamp))
 
-        img_left, img_right = cv2.cvtColor(img_left, cv2.COLOR_BGR2GRAY), cv2.cvtColor(img_right, cv2.COLOR_BGR2GRAY)
-        img1, img2 = SICservice.rectify_image(self.calibration_bytes, left=img_left, right=img_right)
+        img_left, img_right = cv2.cvtColor(img_left, cv2.COLOR_BGR2GRAY), cv2.cvtColor(
+            img_right, cv2.COLOR_BGR2GRAY
+        )
+        img1, img2 = SICservice.rectify_image(
+            self.calibration_bytes, left=img_left, right=img_right
+        )
 
         if img_segmentation is None:
             image_masks = []
         else:
             # Protobuf back to numpy array
-            mask_shape = (img_segmentation.mask_count, img_segmentation.mask_height, img_segmentation.mask_width)
+            mask_shape = (
+                img_segmentation.mask_count,
+                img_segmentation.mask_height,
+                img_segmentation.mask_width,
+            )
             prediction_masks = array(img_segmentation.masks).reshape(mask_shape)
             image_masks = prediction_masks.astype(bool)
 
         left_disp = self.left_matcher.compute(img1, img2)
         right_disp = self.right_matcher.compute(img2, img1)
-        filtered_disp = self.wls_filter.filter(left_disp, img1, disparity_map_right=right_disp)
+        filtered_disp = self.wls_filter.filter(
+            left_disp, img1, disparity_map_right=right_disp
+        )
         disparity_img = filtered_disp.astype(float16) / 16.0
 
         disparity_img = SICservice.crop_image(disparity_img)
-        disparity_img[disparity_img < 0] = NAN_PLACEHOLDER  # Disparity cannot be negative
-        disparity_img[disparity_img >= img1.shape[1]] = NAN_PLACEHOLDER  # Disparity larger than image width is not possible
+        disparity_img[disparity_img < 0] = (
+            NAN_PLACEHOLDER  # Disparity cannot be negative
+        )
+        disparity_img[disparity_img >= img1.shape[1]] = (
+            NAN_PLACEHOLDER  # Disparity larger than image width is not possible
+        )
 
         depth_img = self.disp_to_cm(disparity_img.copy())  # Disparity values to cm
         depth_img[depth_img < 0] = NAN_PLACEHOLDER  # Camera cannot be negative
@@ -112,7 +126,9 @@ class DepthEstimationService(SICservice):
         # Create estimations, standard deviations
         estimations = []
         for image_mask in image_masks:
-            estimation, deviation = DepthEstimationService.estimate(depth_img, image_mask)
+            estimation, deviation = DepthEstimationService.estimate(
+                depth_img, image_mask
+            )
             estimations.append((int(estimation), int(deviation)))
 
         img_depth = ImageDepth()
@@ -125,7 +141,9 @@ class DepthEstimationService(SICservice):
         pipe = self.redis.pipeline()
         pipe.zadd(self.depth_topic, {img_depth.SerializeToString(): self.img_timestamp})
         pipe.zremrangebyrank(self.depth_topic, 0, -10)
-        pipe.publish(self.events_topic, 'DepthEstimationDone;' + str(self.img_timestamp))
+        pipe.publish(
+            self.events_topic, "DepthEstimationDone;" + str(self.img_timestamp)
+        )
 
         # for estimation, deviation in estimations:
         #     pipe.publish(self.depth_estimated_topic, str(estimation) + ';' + str(deviation))
@@ -155,9 +173,11 @@ class DepthEstimationService(SICservice):
     @staticmethod
     def img_to_depth(img):
         img = img[img != NAN_PLACEHOLDER]
-        if CRITERION == 'mean':
+        if CRITERION == "mean":
             return int(mean(img)), int(std(img))
-        elif CRITERION == 'median':
+        elif CRITERION == "median":
             return int(median(img)), int(std(img))
         else:
-            raise ValueError('Criterion ' + CRITERION + ' not known; should be "mean" or "median"')
+            raise ValueError(
+                "Criterion " + CRITERION + ' not known; should be "mean" or "median"'
+            )

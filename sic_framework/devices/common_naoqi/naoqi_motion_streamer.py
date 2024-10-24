@@ -1,14 +1,20 @@
 import threading
 import time
 
-from sic_framework import SICComponentManager, SICMessage, utils, SICRequest, SICConfMessage
+from sic_framework import (
+    SICComponentManager,
+    SICConfMessage,
+    SICMessage,
+    SICRequest,
+    utils,
+)
 from sic_framework.core.component_python2 import SICComponent
 from sic_framework.core.connector import SICConnector
 from sic_framework.devices.common_naoqi.common_naoqi_motion import NaoqiMotionTools
 
 if utils.PYTHON_VERSION_IS_2:
-    from naoqi import ALProxy
     import qi
+    from naoqi import ALProxy
 
 
 class StartStreaming(SICRequest):
@@ -37,7 +43,14 @@ class NaoJointAngles(SICMessage):
 
 
 class NaoMotionStreamerConf(SICConfMessage):
-    def __init__(self, stiffness=.6, speed=.75, stream_stiffness=0, use_sensors=False, samples_per_second=20):
+    def __init__(
+        self,
+        stiffness=0.6,
+        speed=0.75,
+        stream_stiffness=0,
+        use_sensors=False,
+        samples_per_second=20,
+    ):
         """
         :param stiffness: Control how much power the robot should use to reach the given joint angles
         :param speed: Set the fraction of the maximum speed used to reach the target position.
@@ -60,12 +73,11 @@ class NaoqiMotionStreamerService(SICComponent, NaoqiMotionTools):
         SICComponent.__init__(self, *args, **kwargs)
 
         self.session = qi.Session()
-        self.session.connect('tcp://127.0.0.1:9559')
+        self.session.connect("tcp://127.0.0.1:9559")
 
         NaoqiMotionTools.__init__(self, qi_session=self.session)
 
-        self.motion = self.session.service('ALMotion')
-
+        self.motion = self.session.service("ALMotion")
 
         self.stiffness = 0
         self.samples_per_second = self.params.samples_per_second
@@ -78,7 +90,6 @@ class NaoqiMotionStreamerService(SICComponent, NaoqiMotionTools):
         self.stream_thread = threading.Thread(target=self.stream_joints)
         self.stream_thread.name = self.get_component_name()
         self.stream_thread.start()
-
 
     @staticmethod
     def get_conf():
@@ -93,7 +104,6 @@ class NaoqiMotionStreamerService(SICComponent, NaoqiMotionTools):
             self.joints = self.generate_joint_list(request.joints)
             self.do_streaming.set()
             return SICMessage()
-
 
         if request == StopStreaming:
             self.do_streaming.clear()
@@ -127,8 +137,9 @@ class NaoqiMotionStreamerService(SICComponent, NaoqiMotionTools):
                     self.motion.setStiffnesses(self.joints, 0.0)
                     self.stiffness = 0
 
-
-                angles = self.motion.getAngles(self.joints, self.params.use_sensors)  # use_sensors=False
+                angles = self.motion.getAngles(
+                    self.joints, self.params.use_sensors
+                )  # use_sensors=False
 
                 self.output_message(NaoJointAngles(self.joints, angles))
 
@@ -142,5 +153,5 @@ class NaoqiMotionStreamer(SICConnector):
     component_class = NaoqiMotionStreamerService
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     SICComponentManager([NaoqiMotionStreamerService])

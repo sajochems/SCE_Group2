@@ -3,14 +3,14 @@ import time
 
 import numpy as np
 
-from sic_framework import SICComponentManager, SICMessage, utils, SICActuator
+from sic_framework import SICActuator, SICComponentManager, SICMessage, utils
 from sic_framework.core.connector import SICConnector
-from sic_framework.core.message_python2 import SICRequest, SICConfMessage
+from sic_framework.core.message_python2 import SICConfMessage, SICRequest
 from sic_framework.devices.common_naoqi.common_naoqi_motion import NaoqiMotionTools
 
 if utils.PYTHON_VERSION_IS_2:
-    from naoqi import ALProxy
     import qi
+    from naoqi import ALProxy
 
 
 class StartRecording(SICRequest):
@@ -63,12 +63,12 @@ class NaoqiMotionRecording(SICMessage):
         Save the motion to a file, e.g. wave.motion
         :param filename: The file name, preferably ending with .motion
         """
-        with open(filename, 'wb') as f:
+        with open(filename, "wb") as f:
             f.write(self.serialize())
 
     @classmethod
     def load(cls, filename):
-        with open(filename, 'rb') as f:
+        with open(filename, "rb") as f:
             return cls.deserialize(f.read())
 
 
@@ -90,8 +90,15 @@ class PlayRecording(SICRequest):
 
 
 class NaoqiMotionRecorderConf(SICConfMessage):
-    def __init__(self, replay_stiffness=.6, replay_speed=.75, use_interpolation=True, setup_time=.5, use_sensors=False,
-                 samples_per_second=20):
+    def __init__(
+        self,
+        replay_stiffness=0.6,
+        replay_speed=0.75,
+        use_interpolation=True,
+        setup_time=0.5,
+        use_sensors=False,
+        samples_per_second=20,
+    ):
         """
         There is a choice between setAngles, which is an approximation of the motion or
         angleInterpolation which may not play the motion if it exceeds max body speed.
@@ -124,11 +131,11 @@ class NaoqiMotionRecorderActuator(SICActuator, NaoqiMotionTools):
         SICActuator.__init__(self, *args, **kwargs)
 
         self.session = qi.Session()
-        self.session.connect('tcp://127.0.0.1:9559')
+        self.session.connect("tcp://127.0.0.1:9559")
 
         NaoqiMotionTools.__init__(self, qi_session=self.session)
 
-        self.motion = self.session.service('ALMotion')
+        self.motion = self.session.service("ALMotion")
 
         self.samples_per_second = self.params.samples_per_second
 
@@ -180,7 +187,6 @@ class NaoqiMotionRecorderActuator(SICActuator, NaoqiMotionTools):
 
                 time.sleep(1 / float(self.samples_per_second))
 
-
         except Exception as e:
             self.logger.exception(e)
             self.stop()
@@ -208,7 +214,9 @@ class NaoqiMotionRecorderActuator(SICActuator, NaoqiMotionTools):
 
         if request == StopRecording:
             self.do_recording.clear()
-            return NaoqiMotionRecording(self.joints, self.recorded_angles, self.recorded_times)
+            return NaoqiMotionRecording(
+                self.joints, self.recorded_angles, self.recorded_times
+            )
 
         if request == PlayRecording:
             return self.replay_recording(request)
@@ -225,7 +233,9 @@ class NaoqiMotionRecorderActuator(SICActuator, NaoqiMotionTools):
             times = np.array(times) + self.params.setup_time
             times = times.tolist()
 
-            self.motion.angleInterpolation(joints, angles, times, True)  # isAbsolute = bool
+            self.motion.angleInterpolation(
+                joints, angles, times, True
+            )  # isAbsolute = bool
 
         else:
             # compute the average time delta (should be 1 / self.samples_per_second anyway)
@@ -238,10 +248,9 @@ class NaoqiMotionRecorderActuator(SICActuator, NaoqiMotionTools):
         return SICMessage()
 
 
-
-
 class NaoqiMotionRecorder(SICConnector):
     component_class = NaoqiMotionRecorderActuator
+
 
 # if __name__ == '__main__':
 #     # c = PepperMotionRecorderActuator()

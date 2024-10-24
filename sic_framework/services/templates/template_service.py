@@ -1,4 +1,4 @@
-from sic_framework import SICComponentManager, SICService, SICConfMessage, SICMessage
+from sic_framework import SICComponentManager, SICConfMessage, SICMessage, SICService
 from sic_framework.core.connector import SICConnector
 from sic_framework.core.message_python2 import CompressedImageMessage
 
@@ -38,5 +38,5 @@ class Example(SICConnector):
     component_class = ExampleService
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     SICComponentManager([ExampleService])

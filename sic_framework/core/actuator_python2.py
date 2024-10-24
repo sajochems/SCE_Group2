@@ -1,6 +1,7 @@
 from abc import abstractmethod
 
 from sic_framework.core.component_python2 import SICComponent
+
 from .message_python2 import SICMessage
 
 
@@ -22,5 +23,3 @@ class SICActuator(SICComponent):
     def on_request(self, request):
         reply = self.execute(request)
         return reply
-
-

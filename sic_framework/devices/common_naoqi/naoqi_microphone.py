@@ -1,12 +1,13 @@
 import threading
+
 from sic_framework import SICComponentManager, utils
 from sic_framework.core.connector import SICConnector
 from sic_framework.core.message_python2 import AudioMessage, SICConfMessage
 from sic_framework.core.sensor_python2 import SICSensor
 
 if utils.PYTHON_VERSION_IS_2:
-    from naoqi import ALProxy
     import qi
+    from naoqi import ALProxy
 
 
 class NaoqiMicrophoneConf(SICConfMessage):
@@ -19,13 +20,14 @@ class NaoqiMicrophoneConf(SICConfMessage):
 
 class NaoqiMicrophoneSensor(SICSensor):
     COMPONENT_STARTUP_TIMEOUT = 4
+
     def __init__(self, *args, **kwargs):
         super(NaoqiMicrophoneSensor, self).__init__(*args, **kwargs)
 
         self.session = qi.Session()
-        self.session.connect('tcp://127.0.0.1:9559')
+        self.session.connect("tcp://127.0.0.1:9559")
 
-        self.audio_service = self.session.service('ALAudioDevice')
+        self.audio_service = self.session.service("ALAudioDevice")
 
         self.module_name = "SICMicrophoneService"
 
@@ -35,10 +37,12 @@ class NaoqiMicrophoneSensor(SICSensor):
             # possbile solution: do not catch runtime error, the registering is already done so
             # the self.audio_service.subscribe(self.module_name) should work
             raise RuntimeError(
-                "Naoqi error, restart robot. Cannot re-register ALAudioDevice service, this service is a singleton. ")
+                "Naoqi error, restart robot. Cannot re-register ALAudioDevice service, this service is a singleton. "
+            )
 
-        self.audio_service.setClientPreferences(self.module_name, self.params.sample_rate,
-                                                self.params.channel_index, 0)
+        self.audio_service.setClientPreferences(
+            self.module_name, self.params.sample_rate, self.params.channel_index, 0
+        )
         self.audio_service.subscribe(self.module_name)
 
         self.new_sound_data_available = threading.Event()
@@ -85,5 +89,5 @@ class NaoqiMicrophone(SICConnector):
     component_class = NaoqiMicrophoneSensor
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     SICComponentManager([NaoqiMicrophoneSensor])

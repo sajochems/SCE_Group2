@@ -17,26 +17,26 @@ class SICConfMessage(SICConfMessage_python2):
     pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import os
+
     from redis import Redis
 
-
     def connect():
-        host = os.getenv('DB_IP')
-        password = os.getenv('DB_PASS')
-        self_signed = os.getenv('DB_SSL_SELFSIGNED')
-        if self_signed == '1':
-            return Redis(host=host, ssl=True, ssl_ca_certs='cert.pem', password=password)
+        host = os.getenv("DB_IP")
+        password = os.getenv("DB_PASS")
+        self_signed = os.getenv("DB_SSL_SELFSIGNED")
+        if self_signed == "1":
+            return Redis(
+                host=host, ssl=True, ssl_ca_certs="cert.pem", password=password
+            )
         else:
             return Redis(host=host, ssl=True, password=password)
-
 
     @dataclass
     class FaceRecData(SICMessage):
         count: int
         arr: np.array
-
 
     # np_arr = np.random.random((640, 480, 3)).astype(np.float32)
     # x = FaceRecData(5, np_arr)
@@ -174,8 +174,8 @@ if __name__ == '__main__':
     ser_a = a.serialize()
 
     redis = connect()
-    redis.set('test_np', ser_a)
-    ser_message = redis.get('test_np')
+    redis.set("test_np", ser_a)
+    ser_message = redis.get("test_np")
     mess = FaceRecData.deserialize(ser_message)
 
     print(f"Python {sys.version_info[0]}: deserialized message, got\n{mess}")

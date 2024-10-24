@@ -38,9 +38,11 @@ class InstallationVerifierComponent(SICComponent):
 class InstallationVerifier(SICConnector):
     component_class = InstallationVerifierComponent
 
+
 def main():
     # Request the service to start using the SICServiceManager on this device
     SICComponentManager([InstallationVerifierComponent])
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
