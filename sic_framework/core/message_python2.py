@@ -15,7 +15,7 @@ if not six.PY3:
     # Set path manually on pepper and nao
     lib_turbo_jpeg_path = (
         "/"
-        + os.path.join(*__file__.split(os.sep)[:-2])
+        + os.path.join(*__file__.split(os.sep)[:-3])
         + "/lib/libturbojpeg/lib32/libturbojpeg.so.0"
     )
 else:
