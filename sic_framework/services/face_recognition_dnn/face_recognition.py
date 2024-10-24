@@ -1,27 +1,32 @@
+import argparse
 import collections
+import os
 
 import cv2
 import numpy as np
 import torch
 import torchvision
-
 from numpy import array
-from pathlib import Path
-
-from sic_framework.core.connector import SICConnector
-from sic_framework.core.component_manager_python2 import SICComponentManager
-from sic_framework.core.message_python2 import CompressedImageMessage, SICMessage, BoundingBox, BoundingBoxesMessage, \
-    CompressedImageRequest
-from sic_framework.core.service_python2 import SICService
-
 from sklearn.neighbors import KNeighborsClassifier
+
+from sic_framework.core.component_manager_python2 import SICComponentManager
+from sic_framework.core.connector import SICConnector
+from sic_framework.core.message_python2 import (
+    BoundingBox,
+    BoundingBoxesMessage,
+    CompressedImageMessage,
+    CompressedImageRequest,
+    SICMessage,
+)
+from sic_framework.core.service_python2 import SICService
 
 
 class DNNFaceRecognitionComponent(SICService):
 
     # loading resnet takes some time
     COMPONENT_STARTUP_TIMEOUT = 15
-
+    model_path = None
+    cascade_path = None
 
     def __init__(self, *args, **kwargs):
         super(DNNFaceRecognitionComponent, self).__init__(*args, **kwargs)
@@ -29,24 +34,32 @@ class DNNFaceRecognitionComponent(SICService):
         self.img_timestamp = None
 
         # Initialize face recognition data
-        self.device = 'cpu'
+        self.device = "cpu"
         if torch.cuda.is_available():
             self.device = "cuda"
-        if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
             self.device = "mps"
 
         # import is relative, so only works when this file is main
         from sic_framework.services.face_recognition_dnn.model import resnet50
 
         self.model = resnet50(include_top=False, num_classes=8631)
-        script_dir = Path(__file__).parent.resolve()
-        model_path = script_dir / "resnet50_ft_weight.pt"
-        self.model.load_state_dict(torch.load(str(model_path)))
+        if not os.path.isfile(DNNFaceRecognitionComponent.model_path):
+            raise FileNotFoundError(
+                f"Model path {DNNFaceRecognitionComponent.model_path} is not correct."
+            )
+        else:
+            model_path = DNNFaceRecognitionComponent.model_path
+        self.model.load_state_dict(torch.load(model_path))
         self.model.to(self.device)
 
-
-        cascadePath = script_dir / "haarcascade_frontalface_default.xml"
-        self.faceCascade = cv2.CascadeClassifier(str(cascadePath))
+        if not os.path.isfile(DNNFaceRecognitionComponent.cascade_path):
+            raise FileNotFoundError(
+                f"Cascade path {DNNFaceRecognitionComponent.cascade_path} is not correct."
+            )
+        else:
+            cascadePath = DNNFaceRecognitionComponent.cascade_path
+        self.faceCascade = cv2.CascadeClassifier(cascadePath)
 
         # Define min window size to be recognized as a face_img
         self.minW = 150
@@ -91,8 +104,8 @@ class DNNFaceRecognitionComponent(SICService):
 
         faces = []
 
-        for (x, y, w, h) in face_boxes:
-            face = img[y:y + h, x:x + w, :]
+        for x, y, w, h in face_boxes:
+            face = img[y : y + h, x : x + w, :]
             face = cv2.resize(face, (224, 224))
 
             tf = torchvision.transforms.ToTensor()
@@ -119,7 +132,6 @@ class DNNFaceRecognitionComponent(SICService):
                     id = self.next_id
                     self.next_id += 1
 
-
                 else:
                     self.logger.info("Recognized face {}".format(id))
 
@@ -139,8 +151,29 @@ class DNNFaceRecognition(SICConnector):
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="Run face recognition with  a model file and cascade file"
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        required=True,
+        help="Path to the model file (e.g., model.pt)",
+    )
+    parser.add_argument(
+        "--cascadefile",
+        type=str,
+        required=True,
+        help="Path to the cascade classifier XML file",
+    )
+    args = parser.parse_args()
+
+    # pass model files to component
+    DNNFaceRecognitionComponent.model_path = args.model
+    DNNFaceRecognitionComponent.cascade_path = args.cascadefile
+
     SICComponentManager([DNNFaceRecognitionComponent])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
