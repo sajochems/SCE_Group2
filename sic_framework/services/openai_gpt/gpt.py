@@ -1,4 +1,4 @@
-import openai
+from openai import OpenAI
 
 from sic_framework import SICComponentManager, SICConfMessage
 from sic_framework.core.component_python2 import SICComponent
@@ -20,7 +20,7 @@ class GPTConf(SICConfMessage):
     :param max_tokens: controls length of response by model
     """
 
-    def __init__(self, openai_key, model="gpt-3.5-turbo-16k", temp=0.5, max_tokens=110):
+    def __init__(self, openai_key, model="gpt-4o-mini", temp=0.5, max_tokens=100):
         super(SICConfMessage, self).__init__()
         self.openai_key = openai_key
         self.model = model
@@ -74,7 +74,7 @@ class GPTComponent(SICComponent):
 
     def __init__(self, *args, **kwargs):
         super(GPTComponent, self).__init__(*args, **kwargs)
-        openai.api_key = self.params.openai_key
+        self.client = OpenAI(api_key=self.params.openai_key)
 
     @staticmethod
     def get_inputs():
@@ -111,17 +111,14 @@ class GPTComponent(SICComponent):
 
         messages.append({"role": "user", "content": user_messages})
 
-        response = openai.ChatCompletion.create(
+        response = self.client.chat.completions.create(
             model=model if model else self.params.model,
             messages=messages,
             temperature=temp if temp else self.params.temperature,
             max_tokens=max_tokens if max_tokens else self.params.max_tokens,
         )
-        print(response)
-
-        content = response.choices[0].message["content"]
-        num_tokens = response["usage"]["total_tokens"]
-
+        content = response.choices[0].message.content
+        num_tokens = response.usage.total_tokens
         return GPTResponse(content, num_tokens)
 
     def on_message(self, message):
@@ -147,6 +144,9 @@ class GPT(SICConnector):
     component_class = GPTComponent
 
 
-if __name__ == "__main__":
-    # Request the service to start using the SICServiceManager on this device
+def main():
     SICComponentManager([GPTComponent])
+
+
+if __name__ == "__main__":
+    main()
