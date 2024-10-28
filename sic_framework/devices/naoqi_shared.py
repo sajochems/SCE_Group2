@@ -123,13 +123,16 @@ class Naoqi(SICDevice):
 
                     # create virtual environment if it doesn't exist
                     if [ ! -d ~/.venv_sic ]; then
+                        echo "Creating virtual environment";
                         /home/nao/.local/bin/virtualenv ~/.venv_sic;
                         source ~/.venv_sic/bin/activate;
 
                         # link OpenCV to the virtualenv
+                        echo "Linking OpenCV to the virtual environment";
                         ln -s /usr/lib/python2.7/site-packages/cv2.so ~/.venv_sic/lib/python2.7/site-packages/cv2.so;
 
                         # install required packages
+                        echo "Installing SIC package";
                         pip install social-interaction-cloud --no-deps;
                         pip install Pillow PyTurboJPEG numpy redis six
                     else
