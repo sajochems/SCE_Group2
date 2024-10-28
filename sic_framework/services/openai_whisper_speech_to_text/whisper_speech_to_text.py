@@ -3,9 +3,8 @@ import queue
 import wave
 
 import numpy as np
-import openai
 import speech_recognition as sr
-import whisper
+from openai import OpenAI
 
 from sic_framework import SICComponentManager, SICConfMessage
 from sic_framework.core.component_python2 import SICComponent
@@ -85,6 +84,8 @@ class WhisperComponent(SICComponent):
         super(WhisperComponent, self).__init__(*args, **kwargs)
 
         # self.model = whisper.load_model("base.en")
+        if self.params.openai_key:
+            self.client = OpenAI(api_key=self.params.openai_key)
 
         self.recognizer = sr.Recognizer()
 
@@ -107,10 +108,9 @@ class WhisperComponent(SICComponent):
         return WhisperConf()
 
     def on_message(self, message):
-
         if not self.parameters_are_inferred:
             self.source.SAMPLE_RATE = message.sample_rate
-            self.source.CHUNK = len(message.waveform)
+            self.source.CHUNK = min(len(message.waveform), self.source.CHUNK)
             self.parameters_are_inferred = True
             self.logger.info(
                 "Inferred sample rate: {} and chunk size: {}".format(
@@ -132,37 +132,38 @@ class WhisperComponent(SICComponent):
         if self.params.openai_key:
             wav_data = io.BytesIO(audio.get_wav_data())
             wav_data.name = "SpeechRecognition_audio.wav"
-            response = openai.Audio.transcribe(
-                "whisper-1",
-                wav_data,
-                api_key=self.params.openai_key,
-                language="en",
+            response = self.client.audio.transcriptions.create(
+                model="whisper-1",
+                file=wav_data,
                 response_format="verbose_json",
             )
-
+            transcript = response.text
+            no_speech_prob = np.mean(
+                [segment.no_speech_prob for segment in response.segments]
+            )
+            print("using online openai model")
         else:
             response = self.recognizer.recognize_whisper(
                 audio, language="english", model=self.params.model, show_dict=True
             )
+            transcript = response["text"]
 
-        print("FULL RESPONSE", response)
-        transcript = response["text"]
-
-        no_speech_prob = np.mean(
-            [segment["no_speech_prob"] for segment in response["segments"]]
-        )
+            no_speech_prob = np.mean(
+                [segment["no_speech_prob"] for segment in response["segments"]]
+            )
+        # print("FULL RESPONSE", response)
 
         if no_speech_prob > 0.5:
             print("Whisper heard silence")
             return Transcript("")
         print("Whisper thinks you said: " + transcript)
 
-        with wave.open(f"audio{self.i}.wav", "wb") as f:
-            f.setnchannels(1)
-            f.setsampwidth(self.source.SAMPLE_WIDTH)  # number of bytes
-            f.setframerate(self.source.SAMPLE_RATE)
-            f.writeframesraw(audio.frame_data)
-        self.i += 1
+        # with wave.open(f"audio{self.i}.wav", "wb") as f:
+        #     f.setnchannels(1)
+        #     f.setsampwidth(self.source.SAMPLE_WIDTH)  # number of bytes
+        #     f.setframerate(self.source.SAMPLE_RATE)
+        #     f.writeframesraw(audio.frame_data)
+        # self.i += 1
 
         return Transcript(transcript)
 
@@ -172,6 +173,9 @@ class SICWhisper(SICConnector):
     component_class = WhisperComponent
 
 
-if __name__ == "__main__":
-    # Request the service to start using the SICServiceManager on this device
+def main():
     SICComponentManager([WhisperComponent])
+
+
+if __name__ == "__main__":
+    main()
