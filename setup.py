@@ -16,6 +16,13 @@ requirements = [
 
 # Dependencies specific to each component or server
 extras_require = {
+    "dev": [
+        "black==24.10.0",
+        "isort==5.13.2",
+        "pre-commit==4.0.1",
+        "twine",
+        "wheel",
+    ],
     "dialogflow": [
         "google-cloud-dialogflow",
     ],
@@ -32,16 +39,20 @@ extras_require = {
         "torch",
         "torchvision",
     ],
-    "dev": [
-        "pre-commit==4.0.1",
-        "isort==5.13.2",
-        "black==24.10.0",
+    "openai-gpt": [
+        "openai>=1.52.2",
+    ],
+    "whisper-speech-to-text": [
+        "openai>=1.52.2",
+        "SpeechRecognition>=3.11.0",
+        "openai-whisper",
+        "soundfile",
     ],
 }
 
 setup(
     name="social-interaction-cloud",
-    version="2.0.13",
+    version="2.0.16",
     author="Koen Hindriks",
     author_email="k.v.hindriks@vu.nl",
     packages=find_packages(),
@@ -60,6 +71,8 @@ setup(
             "run-dialogflow=sic_framework.services.dialogflow:main",
             "run-face-detection=sic_framework.services.face_detection:main",
             "run-face-recognition=sic_framework.services.face_recognition_dnn:main",
+            "run-gpt=sic_framework.services.openai_gpt:main",
+            "run-whisper=sic_framework.services.openai_whisper_speech_to_text:main",
         ],
     },
 )
