@@ -41,12 +41,14 @@ extras_require = {
     ],
     "openai-gpt": [
         "openai>=1.52.2",
+        "python-dotenv",
     ],
     "whisper-speech-to-text": [
         "openai>=1.52.2",
         "SpeechRecognition>=3.11.0",
         "openai-whisper",
         "soundfile",
+        "python-dotenv",
     ],
 }
 
