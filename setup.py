@@ -57,6 +57,8 @@ setup(
     version="2.0.17",
     author="Koen Hindriks",
     author_email="k.v.hindriks@vu.nl",
+    long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
     packages=find_packages(),
     package_data={
         "sic_framework.services.face_detection": [
