@@ -54,7 +54,7 @@ extras_require = {
 
 setup(
     name="social-interaction-cloud",
-    version="2.0.16",
+    version="2.0.17",
     author="Koen Hindriks",
     author_email="k.v.hindriks@vu.nl",
     packages=find_packages(),
@@ -68,10 +68,12 @@ setup(
     },
     install_requires=requirements,
     extras_require=extras_require,
+    python_requires=">=3.10,<3.13",
     entry_points={
         "console_scripts": [
             "run-dialogflow=sic_framework.services.dialogflow:main",
             "run-face-detection=sic_framework.services.face_detection:main",
+            "run-face-detection-dnn=sic_framework.services.face_detection_dnn:main",
             "run-face-recognition=sic_framework.services.face_recognition_dnn:main",
             "run-gpt=sic_framework.services.openai_gpt:main",
             "run-whisper=sic_framework.services.openai_whisper_speech_to_text:main",
