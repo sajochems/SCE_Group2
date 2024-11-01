@@ -23,9 +23,13 @@ from sic_framework.core.message_python2 import (
     SICRequest,
 )
 from sic_framework.core.service_python2 import SICService
-from sic_framework.services.face_detection_dnn import (
-    attempt_load,
+from sic_framework.services.face_detection_dnn.utils_importable.datasets import (
     letterbox,
+)
+from sic_framework.services.face_detection_dnn.utils_importable.experimental import (
+    attempt_load,
+)
+from sic_framework.services.face_detection_dnn.utils_importable.general import (
     non_max_suppression,
     scale_coords,
     xyxy2xywh,
