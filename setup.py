@@ -33,6 +33,7 @@ extras_require = {
         "torch",
         "torchvision",
         "tqdm",
+        "requests",
     ],
     "face-recognition": [
         "scikit-learn",
