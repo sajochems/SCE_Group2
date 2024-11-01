@@ -1,3 +1,5 @@
+import argparse
+import os
 import pathlib
 import queue
 
@@ -72,6 +74,7 @@ https://github.com/derronqi/yolov7-face/tree/main
 
 class DNNFaceDetectionComponent(SICComponent):
     COMPONENT_STARTUP_TIMEOUT = 10
+    model_path = None
 
     def __init__(self, *args, **kwargs):
         super(DNNFaceDetectionComponent, self).__init__(*args, **kwargs)
@@ -79,8 +82,13 @@ class DNNFaceDetectionComponent(SICComponent):
         # Initialize face recognition data
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        root = str(pathlib.Path(__file__).parent.resolve())
-        self.model = attempt_load(root + "/yolov7-face.pt", map_location=self.device)
+        if not os.path.isfile(DNNFaceDetectionComponent.model_path):
+            raise FileNotFoundError(
+                f"Model path {DNNFaceDetectionComponent.model_path} is not correct."
+            )
+        else:
+            model_path = DNNFaceDetectionComponent.model_path
+        self.model = attempt_load(model_path, map_location=self.device)
 
         self.tf = torchvision.transforms.ToTensor()
 
@@ -168,14 +176,12 @@ class DNNFaceDetectionComponent(SICComponent):
                 conf = float(det[j, 4].cpu().numpy())
                 # TODO this indexing is incorrect
                 # landmarks = (det[j, 5:15].view(1, 10) / gn_lks).view(-1).tolist()
-                class_num = int(det[j, 5].cpu().numpy())
+                # class_num = int(det[j, 5].cpu().numpy())
                 x1 = int(xywh[0] * w - 0.5 * xywh[2] * w)
                 y1 = int(xywh[1] * h - 0.5 * xywh[3] * h)
                 w2 = int(xywh[2] * w)
                 h2 = int(xywh[3] * h)
-                bbox = BoundingBox(
-                    x1, y1, w2, h2, identifier=class_num, confidence=conf
-                )
+                bbox = BoundingBox(x1, y1, w2, h2, confidence=conf)
                 faces.append(bbox)
 
         return BoundingBoxesMessage(faces)
@@ -185,7 +191,23 @@ class DNNFaceDetection(SICConnector):
     component_class = DNNFaceDetectionComponent
 
 
-if __name__ == "__main__":
-    # mod = DNNFaceDetectionComponent()
-    # mod._start()
+def main():
+    parser = argparse.ArgumentParser(
+        description="Run face detection dnn with a model file .e.g, yolov7-face.pt"
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        required=True,
+        help="Path to the model file (e.g., yolov7-face.pt)",
+    )
+    args = parser.parse_args()
+
+    # pass yolo model file to component
+    DNNFaceDetectionComponent.model_path = args.model
+
     SICComponentManager([DNNFaceDetectionComponent])
+
+
+if __name__ == "__main__":
+    main()
