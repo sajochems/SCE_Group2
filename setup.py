@@ -54,7 +54,7 @@ extras_require = {
 
 setup(
     name="social-interaction-cloud",
-    version="2.0.17",
+    version="2.0.18",
     author="Koen Hindriks",
     author_email="k.v.hindriks@vu.nl",
     long_description=open("README.md").read(),
