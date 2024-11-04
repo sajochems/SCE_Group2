@@ -97,15 +97,15 @@ class Naoqi(SICDevice):
             # get own public ip address for the device to use
             redis_hostname = utils.get_ip_adress()
 
-        self.stop_cmd = """
-                pkill -f "python2 {}.py"
-                """.format(
-            robot_type
-        )
-
         device_path = (
             "/data/home/nao/.venv_sic/lib/python2.7/site-packages/sic_framework/devices"
         )
+
+        self.stop_cmd = f"""
+            echo 'Killing all previous robot wrapper processes';
+            pkill -f "python2 {device_path}/{robot_type}.py"
+        """
+
         robot_wrapper_file = device_path + "/" + robot_type
 
         if robot_type == "nao":
@@ -136,6 +136,7 @@ class Naoqi(SICDevice):
                         pip install social-interaction-cloud --no-deps;
                         pip install Pillow PyTurboJPEG numpy redis six
                     else
+                        echo "sic venv exists already";
                         # activate virtual environment if it exists
                         source ~/.venv_sic/bin/activate;
 
