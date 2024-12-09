@@ -44,6 +44,10 @@ extras_require = {
         "openai>=1.52.2",
         "python-dotenv",
     ],
+    "webserver": [
+        "Flask",
+        "Flask-SocketIO",
+    ],
     "whisper-speech-to-text": [
         "openai>=1.52.2",
         "SpeechRecognition>=3.11.0",
@@ -80,6 +84,7 @@ setup(
             "run-face-recognition=sic_framework.services.face_recognition_dnn:main",
             "run-gpt=sic_framework.services.openai_gpt:main",
             "run-whisper=sic_framework.services.openai_whisper_speech_to_text:main",
+            "run-webserver=sic_framework.services.webserver.webserver_component:main",
         ],
     },
 )
