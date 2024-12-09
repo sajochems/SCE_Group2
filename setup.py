@@ -71,7 +71,7 @@ setup(
     },
     install_requires=requirements,
     extras_require=extras_require,
-    python_requires=">=3.10,<3.13",
+    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*, !=3.7.*, !=3.8.*, !=3.9.*, <3.13",
     entry_points={
         "console_scripts": [
             "run-dialogflow=sic_framework.services.dialogflow:main",
