@@ -101,7 +101,7 @@ class Naoqi(SICDevice):
             "/data/home/nao/.venv_sic/lib/python2.7/site-packages/sic_framework/devices"
         )
 
-        self.stop_cmd = f"""
+        self.stop_cmd = """
             echo 'Killing all previous robot wrapper processes';
             pkill -f "python2 {device_path}/{robot_type}.py"
         """
