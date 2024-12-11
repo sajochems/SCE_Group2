@@ -104,7 +104,9 @@ class Naoqi(SICDevice):
         self.stop_cmd = """
             echo 'Killing all previous robot wrapper processes';
             pkill -f "python2 {device_path}/{robot_type}.py"
-        """
+        """.format(
+            device_path=device_path, robot_type=robot_type
+        )
 
         robot_wrapper_file = device_path + "/" + robot_type
 
