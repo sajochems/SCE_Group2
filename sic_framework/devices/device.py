@@ -5,17 +5,8 @@ import tarfile
 import tempfile
 import time
 
-import six
-
 from sic_framework.core import utils
 from sic_framework.core.connector import SICConnector
-
-if six.PY3:
-    import pathlib
-
-    import paramiko
-    from scp import SCPClient
-
 
 class _SICLibrary(object):
     """
@@ -86,6 +77,23 @@ class SICDevice(object):
     Abstract class to facilitate property initialization for SICConnector properties.
     This way components of a device can easily be used without initializing all device components manually.
     """
+
+    def __new__(cls, *args, **kwargs):
+        """ Choose specific imports dependend on the type of device.
+
+        Reasoning: alphamini do not support these imports, they are only needed for remotely installing pkgs for Nao and Pepper
+        """
+        instance = super(SICDevice, cls).__new__(cls)
+
+        if cls.__name__ in ("Nao", "Pepper"):
+            import six
+            if six.PY3:
+                global pathlib, paramiko, SCPClient
+                import pathlib
+                import paramiko
+                from scp import SCPClient
+
+        return instance
 
     def __init__(self, ip, username=None, passwords=None):
         """
