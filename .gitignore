@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -169,3 +170,31 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+=======
+# Ignore generated files
+*.rdb
+*.p
+*.pyc
+*.log
+
+# Keep some folders
+!.keepme
+
+# Ignore Eclipse/Pycharm stuff
+.buildpath
+.project
+.settings
+.idea
+
+
+
+# Ignore egg files
+sic_framework.egg-info/
+social_interaction_cloud.egg-info/
+
+sic_framework/services/face_recognition_dnn/resnet50_ft_weight_old.pt
+
+# Ignore build folder
+build
+
+>>>>>>> 5897389d86193479e85bd5978f186e051a9cd60c
