@@ -1,0 +1,96 @@
+[
+    {
+        "name": "Spaghetti Bolognese",
+        "description": "A classic Italian pasta dish with a rich, hearty meat sauce. Perfect for family dinners.",
+        "steps": [
+            {
+                "name": "Chop the onions",
+                "description": "Finely chop the onions",
+                "attributes": [
+                    "knife"
+                ],
+                "image": null,
+                "video": null,
+                "time_indicator": 1
+            },
+            {
+                "name": "Chop the garlic",
+                "description": "Finely chop the garlic",
+                "attributes": [
+                    "knife"
+                ],
+                "image": null,
+                "video": null,
+                "time_indicator": 1
+            },
+            {
+                "name": "Chop the carrots",
+                "description": "Finely chop the carrots.",
+                "attributes": [
+                    "knife"
+                ],
+                "image": null,
+                "video": null,
+                "time_indicator": 1
+            },
+            {
+                "name": "Saute the vegetables",
+                "description": "Cook the chopped vegetables in a pan with olive oil.",
+                "attributes": [
+                    "hot",
+                    "heavy"
+                ],
+                "image": "saute-vegetables.jpg",
+                "video": null,
+                "time_indicator": 2
+            },
+            {
+                "name": "Simmer the sauce",
+                "description": "Add the tomatoes and let it simmer for 30 minutes.",
+                "attributes": [
+                    "hot"
+                ],
+                "image": null,
+                "video": null,
+                "time_indicator": 3
+            },
+            {
+                "name": "Boil the pasta",
+                "description": "Cook the spaghetti in salted boiling water.",
+                "attributes": [
+                    "hot"
+                ],
+                "image": null,
+                "video": null,
+                "time_indicator": 3
+            }
+        ]
+    },
+    {
+        "name": "Pancakes",
+        "description": "Fluffy pancakes perfect for breakfast.",
+        "steps": [
+            {
+                "name": "Mix ingredients",
+                "description": "Combine flour, eggs, milk, and sugar.",
+                "attributes": [
+                    "mix"
+                ],
+                "image": null,
+                "video": null,
+                "time_indicator": 1
+            },
+            {
+                "name": "Cook pancakes",
+                "description": "Pour batter into hot pan and flip when bubbles form.",
+                "attributes": [
+                    "hot",
+                    "flip"
+                ],
+                "image": null,
+                "video": null,
+                "time_indicator": 2
+            }
+        ]
+    }
+]
