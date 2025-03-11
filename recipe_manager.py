@@ -39,6 +39,12 @@ class Step:
             "video": os.path.basename(self.video) if self.video else None,
             "time_indicator": self.time_indicator
         }
+    
+    def printStep(self):
+        print(self.name)
+        print(self.description)
+        print(self.attributes)
+        print(self.time_indicator)
 
 class Recipe:
     def __init__(self, name: str, description: str, steps: List[Step]):
@@ -57,6 +63,13 @@ class Recipe:
             "description": self.description,
             "steps": [step.to_dict() for step in self.steps]
         }
+    def printRecipe(self):
+        print(self.name)
+        print(self.description)
+        for step in self.steps:
+            step.printStep()
+        
+    
 
 class RecipeManager:
     def __init__(self):
@@ -137,3 +150,6 @@ if __name__ == "__main__":
     )
     
     manager.save_all_recipes()
+
+    for recipe in manager.recipes:
+        recipe.printRecipe()
