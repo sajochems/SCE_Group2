@@ -92,5 +92,74 @@
                 "time_indicator": 2
             }
         ]
+    },
+    {
+        "name": "Egg Salad Sandwich",
+        "description": "A simple and delicious egg salad sandwich, perfect for a quick meal.",
+        "steps": [
+            {
+                "name": "Prepare workspace",
+                "description": "Set up your cutting board and get the utensils ready.",
+                "attributes": [],
+                "image": null,
+                "video": null,
+                "time_indicator": 1
+            },
+            {
+                "name": "Gather ingredients",
+                "description": "Lay out all ingredients needed for the egg salad sandwich.",
+                "attributes": [],
+                "image": null,
+                "video": null,
+                "time_indicator": 1
+            },
+            {
+                "name": "Chop eggs",
+                "description": "Peel and chop the boiled eggs into small pieces.",
+                "attributes": [
+                    "knife"
+                ],
+                "image": null,
+                "video": null,
+                "time_indicator": 2
+            },
+            {
+                "name": "Mix ingredients",
+                "description": "Place chopped eggs in a bowl, add mayonnaise and mustard to taste, and mix well. Add salt and pepper as desired.",
+                "attributes": [
+                    "mix"
+                ],
+                "image": null,
+                "video": null,
+                "time_indicator": 2
+            },
+            {
+                "name": "Assemble sandwich",
+                "description": "Spread the egg salad mixture onto one slice of bread. Add lettuce or other optional veggies if desired.",
+                "attributes": [],
+                "image": null,
+                "video": null,
+                "time_indicator": 2
+            },
+            {
+                "name": "Complete sandwich",
+                "description": "Place the second slice of bread on top to complete the sandwich.",
+                "attributes": [],
+                "image": null,
+                "video": null,
+                "time_indicator": 1
+            },
+            {
+                "name": "Cut and serve",
+                "description": "Cut the sandwich in half or quarters and place it on a plate. Optionally, serve with pickles or chips on the side.",
+                "attributes": [
+                    "knife"
+                ],
+                "image": null,
+                "video": null,
+                "time_indicator": 2
+            }
+        ]
     }
+    
 ]
