@@ -131,7 +131,7 @@
                 ],
                 "image": null,
                 "video": null,
-                "time_indicator": 2
+                "time_indicator": 3
             },
             {
                 "name": "Assemble sandwich",
@@ -139,7 +139,7 @@
                 "attributes": [],
                 "image": null,
                 "video": null,
-                "time_indicator": 2
+                "time_indicator": 4
             },
             {
                 "name": "Complete sandwich",
@@ -147,7 +147,7 @@
                 "attributes": [],
                 "image": null,
                 "video": null,
-                "time_indicator": 1
+                "time_indicator": 5
             },
             {
                 "name": "Cut and serve",
@@ -157,7 +157,7 @@
                 ],
                 "image": null,
                 "video": null,
-                "time_indicator": 2
+                "time_indicator": 6
             }
         ]
     }

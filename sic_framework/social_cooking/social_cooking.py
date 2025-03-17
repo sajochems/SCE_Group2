@@ -3,12 +3,14 @@ import numpy as np
 from typing import Optional
 from sic_framework.devices import Pepper
 from sic_framework.services.dialogflow.dialogflow import Dialogflow, DialogflowConf, GetIntentRequest
-from SCE_Group2.sic_framework.social_cooking.recipe_manager import Step, Recipe, RecipeManager
-from SCE_Group2.sic_framework.devices.nao import NaoqiTextToSpeechRequest
+from sic_framework.social_cooking.recipe_manager import Step, Recipe, RecipeManager
+from sic_framework.devices.nao import NaoqiTextToSpeechRequest
+from sic_framework.devices.common_desktop.desktop_microphone import DesktopMicrophone
 
 
 IP_ADDRESS = '192.168.1.109'
-DIALOGFLOW_KEYFILE_PATH = 'socialcooking-jcqe-2706875d925d' 
+DIALOGFLOW_KEYFILE_PATH = 'socialcooking-jcqe-2706875d925d'
+# socialcooking-jcqe-ff31f337e816
 
 def on_dialog(message):
     if message.response:
@@ -26,6 +28,17 @@ class PepperSocialCooking:
         self.dialogflow = Dialogflow(ip='localhost', conf=conf)
         self.dialogflow.register_callback(on_dialog)
         self.dialogflow.connect(self.pepper.mic)
+
+class DesktopSocialCooking:
+    
+    dialogflow = None
+
+    def __init__(self, conf):
+        # Create pepper and dialogflow component
+        microphone = DesktopMicrophone(ip='localhost')
+        self.dialogflow = Dialogflow(ip='localhost', conf=conf)
+        self.dialogflow.register_callback(on_dialog)
+        self.dialogflow.connect(microphone)
 
 class CookingSession:
 
@@ -79,17 +92,22 @@ if __name__ == '__main__':
     # Set up configirations for dialogflow
     dialog_flow_keyfile = json.load(open(DIALOGFLOW_KEYFILE_PATH))
 
-    conf = DialogflowConf(keyfile_json=dialog_flow_keyfile, sample_rate_hertz=16000)
+    #conf = DialogflowConf(keyfile_json=dialog_flow_keyfile, sample_rate_hertz=16000)
 
     # Create pepper
-    pepper = PepperSocialCooking(IP_ADDRESS, conf)
+    #pepper = PepperSocialCooking(IP_ADDRESS, conf)
+
+    #when switching to desktop
+    conf = DialogflowConf(keyfile_json=dialog_flow_keyfile, sample_rate_hertz=44100, language="en")
+    pepper = DesktopSocialCooking(conf)
 
     # Start conversation
-    pepper.pepper.tts.request(NaoqiTextToSpeechRequest("Hello! My name is pepper. What would you like to cook today?"))
+    #pepper.pepper.tts.request(NaoqiTextToSpeechRequest("Hello! My name is pepper. What would you like to cook today?"))
+    print("Hello! My name is pepper. What would you like to cook today?")
 
-    # Set the current cooking session to the Egg Salad Sandwhich
+    # Set the current cooking session to the Egg Salad Sandwich
     cooking_session = CookingSession()
-    cooking_session.set_recipe("Egg Salad Sandwhich")
+    cooking_session.set_recipe("Egg Salad Sandwich")
 
     # Randomly generate an id for the intent request
     intent_id = np.random.randint(10000)
@@ -102,11 +120,13 @@ if __name__ == '__main__':
             reply = pepper.dialogflow.request(GetIntentRequest(intent_id))
 
             #TODO: I am not sure this is the way the intent type will be returned. Can be tested with example on video.
+            print(reply.intent)
             if reply.intent == "Finished Step":
 
                 # Check if the current step is the final step
                 if cooking_session.is_final_step():
-                    pepper.pepper.tts.request(NaoqiTextToSpeechRequest("Enjoy your meal! Let me know if you would like to cook something else next time!"))
+                    #pepper.pepper.tts.request(NaoqiTextToSpeechRequest("Enjoy your meal! Let me know if you would like to cook something else next time!"))
+                    print("Enjoy your meal! Let me know if you would like to cook something else next time!")
 
                     # Conversation ended, break out of loop
                     pepper.dialogflow.stop()
@@ -114,12 +134,14 @@ if __name__ == '__main__':
                 else:
                     # Otherwise, reply with a default reply
                     text = reply.fulfillment_message
-                    pepper.pepper.tts.request(NaoqiTextToSpeechRequest(text))
+                    #pepper.pepper.tts.request(NaoqiTextToSpeechRequest(text))
+                    print(text)
 
                     # Read the next step
                     step = cooking_session.next_step()
                     if step != None:
-                        pepper.pepper.tts.request(NaoqiTextToSpeechRequest(step.description))
+                        #pepper.pepper.tts.request(NaoqiTextToSpeechRequest(step.description))
+                        print(step.description)
             
               #TODO: If necessary, define other types of intent and define what pepper should do in these cases
             
