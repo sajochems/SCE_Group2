@@ -3,14 +3,19 @@ import numpy as np
 from typing import Optional
 from sic_framework.devices import Pepper
 from sic_framework.services.dialogflow.dialogflow import Dialogflow, DialogflowConf, GetIntentRequest
-from sic_framework.social_cooking.recipe_manager import Step, Recipe, RecipeManager
 from sic_framework.devices.nao import NaoqiTextToSpeechRequest
 from sic_framework.devices.common_desktop.desktop_microphone import DesktopMicrophone
 
+from recipe_manager import Step, Recipe, RecipeManager
+
+
 
 IP_ADDRESS = '192.168.1.109'
-DIALOGFLOW_KEYFILE_PATH = 'socialcooking-jcqe-2706875d925d'
+DIALOGFLOW_KEYFILE_PATH = 'socialcooking-jcqe-b2a7e0f860e5.json'
 # socialcooking-jcqe-ff31f337e816
+# socialcooking-jcqe-b2a7e0f860e5
+# socialcooking-jcqe-2706875d925d
+
 
 def on_dialog(message):
     if message.response:
@@ -24,6 +29,7 @@ class PepperSocialCooking:
 
     def __init__(self, ip:str, conf):
         # Create pepper and dialogflow component
+        print("hi")
         self.pepper = Pepper(IP_ADDRESS)
         self.dialogflow = Dialogflow(ip='localhost', conf=conf)
         self.dialogflow.register_callback(on_dialog)
@@ -35,6 +41,7 @@ class DesktopSocialCooking:
 
     def __init__(self, conf):
         # Create pepper and dialogflow component
+        print("hello")
         microphone = DesktopMicrophone(ip='localhost')
         self.dialogflow = Dialogflow(ip='localhost', conf=conf)
         self.dialogflow.register_callback(on_dialog)
@@ -42,13 +49,13 @@ class DesktopSocialCooking:
 
 class CookingSession:
 
-    recipe_manager = None
     current_step_index = -1
     current_step = None
     recipe = None
 
-    def __init__(self,):
-        self.recipe_manger = RecipeManager()
+    def __init__(self):
+        print("making a recipe manager")
+        self.recipe_manager = RecipeManager()
         
 
     def set_recipe(self, recipe_name) -> Optional[Recipe]:
@@ -89,6 +96,7 @@ class CookingSession:
 
 
 if __name__ == '__main__':
+    print("starting main")
     # Set up configirations for dialogflow
     dialog_flow_keyfile = json.load(open(DIALOGFLOW_KEYFILE_PATH))
 
@@ -97,8 +105,10 @@ if __name__ == '__main__':
     # Create pepper
     #pepper = PepperSocialCooking(IP_ADDRESS, conf)
 
+    print("setting up dialogflowConf...")
     #when switching to desktop
     conf = DialogflowConf(keyfile_json=dialog_flow_keyfile, sample_rate_hertz=44100, language="en")
+    print("creating pepper")
     pepper = DesktopSocialCooking(conf)
 
     # Start conversation

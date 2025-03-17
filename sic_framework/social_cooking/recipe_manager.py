@@ -73,6 +73,7 @@ class Recipe:
 
 class RecipeManager:
     def __init__(self):
+        print("loading all recipes...")
         self.recipes: List[Recipe] = self.load_all_recipes()
 
     def load_all_recipes(self) -> List[Recipe]:
